@@ -1,262 +1,166 @@
 import * as THREE from 'three';
-import { GLOBE_CONFIG } from '../theme/constants';
 import { EARTH_CONFIG } from '../theme/earthConfig';
-import { PALETTE } from '../theme/palette';
-import { latLngToVector3 } from './coordinates';
 
 /**
- * 3D Simplex / Value Noise implementation for smooth rolling hills.
- */
-function hash(x: number, y: number, z: number): number {
-  let h = Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ Math.imul(z, 912345671);
-  h = (h ^ (h >>> 13)) * 1274126177;
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
-
-function smoothstep(t: number): number {
-  return t * t * (3 - 2 * t);
-}
-
-function noise3D(x: number, y: number, z: number): number {
-  const ix = Math.floor(x);
-  const iy = Math.floor(y);
-  const iz = Math.floor(z);
-
-  const fx = x - ix;
-  const fy = y - iy;
-  const fz = z - iz;
-
-  const ux = smoothstep(fx);
-  const uy = smoothstep(fy);
-  const uz = smoothstep(fz);
-
-  const n000 = hash(ix, iy, iz);
-  const n100 = hash(ix + 1, iy, iz);
-  const n010 = hash(ix, iy + 1, iz);
-  const n110 = hash(ix + 1, iy + 1, iz);
-  const n001 = hash(ix, iy, iz + 1);
-  const n101 = hash(ix + 1, iy, iz + 1);
-  const n011 = hash(ix, iy + 1, iz + 1);
-  const n111 = hash(ix + 1, iy + 1, iz + 1);
-
-  const x00 = n000 + ux * (n100 - n000);
-  const x10 = n010 + ux * (n110 - n010);
-  const x01 = n001 + ux * (n101 - n001);
-  const x11 = n011 + ux * (n111 - n011);
-
-  const y0 = x00 + uy * (x10 - x00);
-  const y1 = x01 + uy * (x11 - x01);
-
-  return y0 + uz * (y1 - y0);
-}
-
-/**
- * Multi-octave fractal brownian motion (fBm) for natural terrain elevations.
- */
-export function getTerrainNoise(x: number, y: number, z: number, scale = GLOBE_CONFIG.NOISE_SCALE): number {
-  const nx = x * scale;
-  const ny = y * scale;
-  const nz = z * scale;
-
-  let total = 0;
-  total += noise3D(nx, ny, nz) * 0.65;
-  total += noise3D(nx * 2.2, ny * 2.2, nz * 2.2) * 0.25;
-  total += noise3D(nx * 4.4, ny * 4.4, nz * 4.4) * 0.10;
-
-  return total;
-}
-
-/**
- * Singleton state storing sampled specular land/ocean mask pixels.
+ * Land Mask Sampler
+ * Texture: /textures/land_mask_4096.png (or fallback canvas)
+ * White (255) = Land
+ * Black (0) = Water
  */
 let maskData: Uint8ClampedArray | null = null;
 let maskWidth = 0;
 let maskHeight = 0;
+let loadPromise: Promise<void> | null = null;
+
+// Backward-compatibility stubs for earlier low-poly phase components
+export const sampleLandOceanMask = (lat: number, lng: number): number => 1.0 - sampleLandMask(lat, lng);
+export const initLandOceanMask = (_img: unknown): void => {};
+export const getBiomeInfo = (_lat: number, _lng: number, _faceId?: number) => ({
+  color: new THREE.Color('#7BC96F'),
+  elevation: 0,
+  isLand: true,
+  isBeach: false,
+  isSnow: false,
+  isDesert: false,
+});
 
 /**
- * Initializes the land/ocean mask from an HTMLImageElement or Canvas.
+ * Initializes the land mask from an Image / Canvas or loads /textures/land_mask_4096.png.
  */
-export function initLandOceanMask(img: HTMLImageElement | HTMLCanvasElement): void {
-  const canvas = document.createElement('canvas');
-  // 512x256 is optimal: instant to parse and accurate enough for continent & island silhouettes
-  canvas.width = 512;
-  canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+export function loadLandMask(url = EARTH_CONFIG.textures.landMask): Promise<void> {
+  if (maskData) return Promise.resolve();
+  if (loadPromise) return loadPromise;
 
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  maskData = imgData.data;
-  maskWidth = canvas.width;
-  maskHeight = canvas.height;
+  // Check if running in browser
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    loadPromise = new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            maskData = imgData.data;
+            maskWidth = canvas.width;
+            maskHeight = canvas.height;
+          }
+        } catch (e) {
+          console.warn('[terrainSampler] Could not read land mask canvas:', e);
+        }
+        resolve();
+      };
+      img.onerror = (err) => {
+        console.warn('[terrainSampler] Failed to load land mask image:', err);
+        resolve();
+      };
+    });
+    return loadPromise;
+  }
+
+  // Node environment fallback (for CLI scripts / tests)
+  return Promise.resolve();
 }
 
 /**
- * Returns raw mask brightness at (lat, lng): 0.0 (Land) to 1.0 (Ocean).
+ * Allows setting mask data directly (e.g. from Node tests or pre-decoded buffer).
  */
-export function sampleLandOceanMask(lat: number, lng: number): number {
+export function setLandMaskData(data: Uint8ClampedArray, width: number, height: number): void {
+  maskData = data;
+  maskWidth = width;
+  maskHeight = height;
+}
+
+export function isLandMaskReady(): boolean {
+  return maskData !== null && maskWidth > 0 && maskHeight > 0;
+}
+
+/**
+ * Returns raw brightness at (lat, lng): 0.0 (Water) to 1.0 (Land).
+ * Equirectangular:
+ * Longitude: -180 (left) to 180 (right)
+ * Latitude: 90 (top) to -90 (bottom)
+ */
+export function sampleLandMask(lat: number, lng: number): number {
   if (!maskData || maskWidth === 0 || maskHeight === 0) {
-    // Fallback if mask not yet initialized: assume sea level
-    return 0.5;
+    return 1.0; // Default to land before mask loads
   }
 
-  // Latitude: 90 (top, v=0) to -90 (bottom, v=1)
-  const v = (90 - lat) / 180;
-  // Longitude: -180 (left, u=0) to +180 (right, u=1)
+  const v = Math.min(1.0, Math.max(0.0, (90 - lat) / 180));
   let u = (lng + 180) / 360;
-  u = ((u % 1) + 1) % 1; // Wrap horizontally
+  u = ((u % 1) + 1) % 1; // Wrap longitude horizontally
 
   const px = Math.min(maskWidth - 1, Math.max(0, Math.floor(u * maskWidth)));
   const py = Math.min(maskHeight - 1, Math.max(0, Math.floor(v * maskHeight)));
 
   const idx = (py * maskWidth + px) * 4;
-  // White in specular map = ocean (~255), Black = land (~0)
   return maskData[idx] / 255.0;
 }
 
 /**
- * Returns true if the coordinate is on land.
+ * Returns true if (lat, lng) is on land according to land_mask_4096.png.
+ * White = land (> 128), Black = water (<= 128).
  */
-export function isLand(lat: number, lng: number, threshold = 0.45): boolean {
-  return sampleLandOceanMask(lat, lng) < threshold;
+export function isLand(lat: number, lng: number, threshold = 0.5): boolean {
+  return sampleLandMask(lat, lng) >= threshold;
 }
 
 /**
- * Shared function: calculates the exact surface radius at any given lat, lng.
- * Blobs, trees, rocks, and UI markers use this so they sit flush on the low-poly terrain.
+ * Calculates the exact surface radius at any given lat, lng.
+ * Water = base radius (2.5)
+ * Land = base radius + a small height from the mask/elevation (2.52)
  */
 export function getSurfaceRadius(lat: number, lng: number): number {
-  const mask = sampleLandOceanMask(lat, lng);
   const rBase = EARTH_CONFIG.PLANET_RADIUS;
-
-  if (mask < 0.45) {
-    // Land vertex: elevated hills & mountain relief matching the bump displacement
-    const v = latLngToVector3(lat, lng, 1.0);
-    const noise = getTerrainNoise(v.x, v.y, v.z);
-    
-    // Smooth coastline transition
-    const coastFactor = Math.min(1.0, Math.max(0.0, (0.45 - mask) / GLOBE_CONFIG.COASTLINE_WIDTH));
-    const elevation = EARTH_CONFIG.DISPLACEMENT_SCALE * (0.35 + 0.65 * noise) * coastFactor;
-    return rBase + elevation;
-  } else {
-    // Ocean sits at base sea level
-    return rBase;
+  if (isLand(lat, lng)) {
+    return rBase + EARTH_CONFIG.LAND_ELEVATION;
   }
-}
-
-export interface BiomeInfo {
-  color: THREE.Color;
-  elevation: number;
-  isLand: boolean;
-  isBeach: boolean;
-  isSnow: boolean;
-  isDesert: boolean;
+  return rBase;
 }
 
 /**
- * Determines biome characteristics and color for a specific face or coordinate.
+ * Snaps a coordinate to the nearest land pixel if it happens to be on water.
  */
-export function getBiomeInfo(lat: number, lng: number, faceId = 0): BiomeInfo {
-  const mask = sampleLandOceanMask(lat, lng);
-  const isLandArea = mask < 0.45;
-  const absLat = Math.abs(lat);
-
-  if (!isLandArea) {
-    // Ocean
-    const shallow = mask < 0.55;
-    const oceanColor = new THREE.Color(shallow ? PALETTE.water.shallow : PALETTE.water.deep);
-    // Subtle face variation
-    oceanColor.offsetHSL(0, 0, ((faceId % 5) - 2) * 0.012);
-    return {
-      color: oceanColor,
-      elevation: -GLOBE_CONFIG.OCEAN_DEPTH,
-      isLand: false,
-      isBeach: false,
-      isSnow: false,
-      isDesert: false,
-    };
+export function snapToNearestLand(
+  lat: number,
+  lng: number,
+  searchRadius = 1.0
+): { lat: number; lng: number } {
+  if (isLand(lat, lng)) {
+    return { lat, lng };
   }
 
-  // Land
-  const v = latLngToVector3(lat, lng, 1.0);
-  const noise = getTerrainNoise(v.x, v.y, v.z);
-  const coastDist = (0.45 - mask) / GLOBE_CONFIG.COASTLINE_WIDTH;
-  const coastFactor = Math.min(1.0, Math.max(0.0, coastDist));
-  const elevation = GLOBE_CONFIG.TERRAIN_HEIGHT * noise * (0.3 + 0.7 * coastFactor);
+  let bestLat = lat;
+  let bestLng = lng;
+  let maxMaskVal = -1;
 
-  // 1. Polar Snow caps
-  if (absLat > GLOBE_CONFIG.POLAR_SNOW_LAT) {
-    const snowColor = new THREE.Color(faceId % 2 === 0 ? PALETTE.terrain.snow : PALETTE.terrain.snowTint);
-    return {
-      color: snowColor,
-      elevation,
-      isLand: true,
-      isBeach: false,
-      isSnow: true,
-      isDesert: false,
-    };
+  const steps = 12;
+  const stepSize = searchRadius / steps;
+
+  for (let r = stepSize; r <= searchRadius; r += stepSize) {
+    const angleCount = Math.max(8, Math.floor(r * 8));
+    for (let a = 0; a < angleCount; a++) {
+      const angle = (a / angleCount) * Math.PI * 2;
+      const testLat = Math.max(-85, Math.min(85, lat + Math.sin(angle) * r));
+      const cosLat = Math.max(0.15, Math.cos((testLat * Math.PI) / 180));
+      const testLng = lng + (Math.cos(angle) * r) / cosLat;
+
+      const maskVal = sampleLandMask(testLat, testLng);
+      if (maskVal > maxMaskVal) {
+        maxMaskVal = maskVal;
+        bestLat = testLat;
+        bestLng = testLng;
+        if (maskVal >= 0.5) {
+          return { lat: bestLat, lng: bestLng };
+        }
+      }
+    }
   }
 
-  // 2. Sandy coastline strip
-  if (mask >= 0.38 && mask < 0.45 && absLat < 60) {
-    const sandColor = new THREE.Color(PALETTE.terrain.sand);
-    sandColor.offsetHSL(0, 0, ((faceId % 3) - 1) * 0.015);
-    return {
-      color: sandColor,
-      elevation,
-      isLand: true,
-      isBeach: true,
-      isSnow: false,
-      isDesert: false,
-    };
-  }
-
-  // 3. Desert regions (Sahara, Arabian Peninsula, Australian Outback)
-  const isDesertRegion =
-    (lat >= GLOBE_CONFIG.DESERT_LAT_MIN && lat <= GLOBE_CONFIG.DESERT_LAT_MAX && lng >= -15 && lng <= 60) ||
-    (lat <= -20 && lat >= -30 && lng >= 115 && lng <= 145);
-
-  if (isDesertRegion) {
-    const desertColor = new THREE.Color(
-      faceId % 3 === 0 ? PALETTE.terrain.desertDune : PALETTE.terrain.desert
-    );
-    desertColor.offsetHSL(0, 0, ((faceId % 4) - 1.5) * 0.015);
-    return {
-      color: desertColor,
-      elevation,
-      isLand: true,
-      isBeach: false,
-      isSnow: false,
-      isDesert: true,
-    };
-  }
-
-  // 4. Highlands and Mountain Peaks
-  if (elevation > GLOBE_CONFIG.TERRAIN_HEIGHT * 0.78) {
-    const highlandColor = new THREE.Color(PALETTE.terrain.highlands);
-    return {
-      color: highlandColor,
-      elevation,
-      isLand: true,
-      isBeach: false,
-      isSnow: false,
-      isDesert: false,
-    };
-  }
-
-  // 5. Lush Grassland
-  const grassPalette = PALETTE.terrain.greens;
-  const pickedColor = grassPalette[Math.abs(faceId) % grassPalette.length];
-  const color = new THREE.Color(pickedColor);
-  // Slight facet variation to enhance low-poly beauty
-  color.offsetHSL(0, 0, ((faceId % 5) - 2) * 0.02);
-
-  return {
-    color,
-    elevation,
-    isLand: true,
-    isBeach: false,
-    isSnow: false,
-    isDesert: false,
-  };
+  return { lat: bestLat, lng: bestLng };
 }

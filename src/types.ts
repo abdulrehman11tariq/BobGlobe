@@ -21,6 +21,9 @@ export interface CountryEntry {
   name: string;
   lat: number;
   lng: number;
+  lastfmName?: string;
+  pop?: number;
+  areaDeg2?: number;
   artists: Artist[]; // up to 5 per country, sorted by listeners
 }
 

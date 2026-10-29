@@ -1,9 +1,9 @@
+import * as THREE from 'three';
 import type { CountryEntry, BlobInstanceData } from '../types';
 import { BLOB_CONFIG } from '../theme/blobConfig';
-import { GLOBE_CONFIG } from '../theme/constants';
 import { MOCHI_CONFIG } from '../theme/mochiConfig';
-import { latLngToVector3 } from './coordinates';
-import { getSurfaceRadius, sampleLandOceanMask, isLand } from './terrainSampler';
+import { latLngToVec3 } from './coordinates';
+import { getSurfaceRadius, isLand, snapToNearestLand } from './terrainSampler';
 
 /**
  * Calculates blob radius according to listener count:
@@ -14,49 +14,6 @@ export function calculateBlobRadius(listeners: number, maxListeners: number): nu
   const ratio = Math.max(0, Math.min(1, listeners / safeMax));
   const { MIN_RADIUS, MAX_RADIUS } = BLOB_CONFIG;
   return MIN_RADIUS + (MAX_RADIUS - MIN_RADIUS) * Math.sqrt(ratio);
-}
-
-/**
- * Snaps island/coastal countries to nearby solid land if centroid is on ocean water.
- */
-export function snapToNearestLand(
-  lat: number,
-  lng: number,
-  searchRadius = BLOB_CONFIG.ISLAND_SNAP_RADIUS
-): { lat: number; lng: number } {
-  if (isLand(lat, lng, 0.40)) {
-    return { lat, lng };
-  }
-
-  let bestLat = lat;
-  let bestLng = lng;
-  let minMask = sampleLandOceanMask(lat, lng);
-
-  const steps = 10;
-  const stepSize = searchRadius / steps;
-
-  for (let r = stepSize; r <= searchRadius; r += stepSize) {
-    const angleCount = Math.max(8, Math.floor(r * 4));
-    for (let a = 0; a < angleCount; a++) {
-      const angle = (a / angleCount) * Math.PI * 2;
-      const testLat = Math.max(-85, Math.min(85, lat + Math.sin(angle) * r));
-      const cosLat = Math.max(0.2, Math.cos((testLat * Math.PI) / 180));
-      const testLng = lng + (Math.cos(angle) * r) / cosLat;
-
-      const mask = sampleLandOceanMask(testLat, testLng);
-      if (mask < minMask) {
-        minMask = mask;
-        bestLat = testLat;
-        bestLng = testLng;
-        if (mask < 0.25) {
-          // Deep inland found
-          return { lat: bestLat, lng: bestLng };
-        }
-      }
-    }
-  }
-
-  return { lat: bestLat, lng: bestLng };
 }
 
 /**
@@ -72,8 +29,12 @@ export function getArtistColor(name: string): string {
 }
 
 /**
- * Places up to 5 blobs for a country around its centroid in a non-overlapping ring,
- * standing directly on the terrain surface.
+ * Places blobs for a country:
+ * - #1 artist at the exact lat/lng from countries.json
+ * - Remaining artists in a spaced ring around it
+ * - Ring is shrunk for small countries
+ * - Ring positions falling in water are stepped toward center until on land
+ * - Never place a blob in the ocean
  */
 export function generateCountryBlobs(
   country: CountryEntry,
@@ -82,21 +43,28 @@ export function generateCountryBlobs(
   const { artists } = country;
   if (!artists || artists.length === 0) return [];
 
-  // 1. Ensure centroid is on solid land
-  const { lat: centerLat, lng: centerLng } = snapToNearestLand(country.lat, country.lng);
+  // 1. Center coordinate from countries.json (guaranteed on land)
+  let centerLat = country.lat;
+  let centerLng = country.lng;
+
+  // Safety snap in case of rasterization edge cases for tiny micro-nations
+  if (!isLand(centerLat, centerLng)) {
+    const snapped = snapToNearestLand(centerLat, centerLng, 1.2);
+    centerLat = snapped.lat;
+    centerLng = snapped.lng;
+  }
 
   // 2. Compute radii for each artist
   const radii = artists.map((a) => calculateBlobRadius(a.listeners, maxListeners));
   const centerRadius = radii[0];
 
   const blobInstances: BlobInstanceData[] = [];
-  const planetR = GLOBE_CONFIG.PLANET_RADIUS;
 
-  // 3. Place Rank 1 (biggest artist) at the exact centroid
+  // 3. Place Rank 1 (biggest artist) at the exact lat/lng
   const centerSurfR = getSurfaceRadius(centerLat, centerLng);
-  // Blob center is lifted by its radius so its bottom sits directly on the ground
-  const centerLiftedR = centerSurfR + centerRadius;
-  const centerPos = latLngToVector3(centerLat, centerLng, centerLiftedR);
+  // Center is lifted slightly so blob bottom rests flush on the ground
+  const centerLiftedR = centerSurfR + centerRadius * 0.72;
+  const centerPos = latLngToVec3(centerLat, centerLng, centerLiftedR);
   const centerNormal = centerPos.clone().normalize();
 
   blobInstances.push({
@@ -114,39 +82,71 @@ export function generateCountryBlobs(
     color: getArtistColor(artists[0].name),
   });
 
-  // 4. Place remaining artists (ranks 2 to 5) in a spaced ring around the center
+  // 4. Place remaining artists in a spaced ring around the center
   const surroundingCount = artists.length - 1;
   if (surroundingCount === 0) return blobInstances;
 
-  // Calculate ring separation distance based on blob sizes
-  const maxSurroundingRadius = Math.max(...radii.slice(1));
-  const linearSeparation = Math.max(
-    BLOB_CONFIG.MIN_RING_RADIUS,
-    (centerRadius + maxSurroundingRadius) * BLOB_CONFIG.RING_SPACING_FACTOR
-  );
+  // Determine ring radius based on country size (areaDeg2)
+  const area = country.areaDeg2 ?? 50;
+  let baseRingDeg = 1.35;
+  if (area < 1.0) {
+    baseRingDeg = 0.28; // Tiny island / city state (Singapore, Hong Kong, etc.)
+  } else if (area < 10.0) {
+    baseRingDeg = 0.55; // Small country (Netherlands, Israel, etc.)
+  } else if (area < 35.0) {
+    baseRingDeg = 0.95; // Medium-small country (UK, Japan, etc.)
+  } else if (area < 100.0) {
+    baseRingDeg = 1.45; // Medium country (Germany, France, Spain, etc.)
+  } else {
+    baseRingDeg = 2.40; // Large continent-sized country (USA, Brazil, Australia, China)
+  }
 
-  // Convert distance to angular spread in degrees
-  const angularDistDeg = (linearSeparation / planetR) * (180 / Math.PI);
   const angleStep = (2 * Math.PI) / surroundingCount;
-  // Offset angle slightly per country so rings don't all align identically
-  const rotOffset = ((country.code.charCodeAt(0) * 17) % 360) * (Math.PI / 180);
+  // Deterministic rotation offset per country
+  const rotOffset = ((country.code.charCodeAt(0) * 23) % 360) * (Math.PI / 180);
 
   for (let i = 0; i < surroundingCount; i++) {
     const artist = artists[i + 1];
     const r = radii[i + 1];
     const azimuth = i * angleStep + rotOffset;
 
-    // Local tangential offset around center
-    const latOffset = angularDistDeg * Math.cos(azimuth);
-    const cosLat = Math.max(0.2, Math.cos((centerLat * Math.PI) / 180));
-    const lngOffset = (angularDistDeg / cosLat) * Math.sin(azimuth);
+    const cosLat = Math.max(0.15, Math.cos(THREE.MathUtils.degToRad(centerLat)));
 
-    const bLat = Math.max(-85, Math.min(85, centerLat + latOffset));
-    const bLng = centerLng + lngOffset;
+    // Candidate position on ring
+    let testLat = centerLat + baseRingDeg * Math.cos(azimuth);
+    let testLng = centerLng + (baseRingDeg * Math.sin(azimuth)) / cosLat;
 
-    const surfR = getSurfaceRadius(bLat, bLng);
-    const liftedR = surfR + r;
-    const pos = latLngToVector3(bLat, bLng, liftedR);
+    // Check if test position is on land
+    // If in water, step toward country center until it is on land
+    if (!isLand(testLat, testLng)) {
+      let foundLand = false;
+      for (let step = 1; step <= 20; step++) {
+        const factor = 1.0 - step * 0.048; // 0.952, 0.904, ..., 0.04
+        const candLat = centerLat + (testLat - centerLat) * factor;
+        const candLng = centerLng + (testLng - centerLng) * factor;
+        if (isLand(candLat, candLng)) {
+          testLat = candLat;
+          testLng = candLng;
+          foundLand = true;
+          break;
+        }
+      }
+
+      if (!foundLand) {
+        // Fallback: stay very close to center on land
+        const nudge = 0.04;
+        testLat = centerLat + nudge * Math.cos(azimuth);
+        testLng = centerLng + (nudge * Math.sin(azimuth)) / cosLat;
+        if (!isLand(testLat, testLng)) {
+          testLat = centerLat;
+          testLng = centerLng;
+        }
+      }
+    }
+
+    const surfR = getSurfaceRadius(testLat, testLng);
+    const liftedR = surfR + r * 0.72;
+    const pos = latLngToVec3(testLat, testLng, liftedR);
     const norm = pos.clone().normalize();
 
     blobInstances.push({
@@ -154,8 +154,8 @@ export function generateCountryBlobs(
       artist,
       country,
       rank: i + 2,
-      lat: bLat,
-      lng: bLng,
+      lat: testLat,
+      lng: testLng,
       position: [pos.x, pos.y, pos.z],
       normal: [norm.x, norm.y, norm.z],
       radius: r,

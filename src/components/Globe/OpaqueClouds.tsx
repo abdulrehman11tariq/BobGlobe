@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { EARTH_CONFIG } from '../../theme/earthConfig';
+import { latLngToVec3 } from '../../utils/coordinates';
 
 interface CloudClusterData {
   basePos: THREE.Vector3;
@@ -88,14 +89,7 @@ export const OpaqueClouds: FC = () => {
       const lat = lats[i % lats.length];
       const lng = lngs[i % lngs.length];
 
-      const phi = (90 - lat) * (Math.PI / 180);
-      const theta = (lng + 180) * (Math.PI / 180);
-
-      const x = -alt * Math.sin(phi) * Math.cos(theta);
-      const y = alt * Math.cos(phi);
-      const z = alt * Math.sin(phi) * Math.sin(theta);
-
-      const basePos = new THREE.Vector3(x, y, z);
+      const basePos = latLngToVec3(lat, lng, alt);
       const orbitAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(
         new THREE.Vector3(1, 0, 0),
         ((i % 3) - 1) * 0.2

@@ -2,52 +2,48 @@ import { useMemo, useRef, type FC } from 'react';
 import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import { EARTH_CONFIG } from '../../theme/earthConfig';
-import { createOpaqueToonEarthMaterial } from './OpaqueToonEarthShader';
 import { OpaqueClouds } from './OpaqueClouds';
 
 interface CleanEarthProps {
   radius?: number;
-  sunPosition?: [number, number, number];
 }
 
 /**
- * Clean, Simple, Cartoon Earth (100% Fully Opaque)
- * HARD RULE: ZERO TRANSPARENCY IN 3D (transparent: false, depthWrite: true).
- * Features:
- * - Smooth 192x192 sphere with real continent shapes
- * - Stepped toon bands (Friendly Blue ocean, shallow teal coast, fresh green land, mountain green, sand strip, polar white)
- * - Solid dark-blue inverted-hull outline (#1a365d, scale 1.018, BackSide)
- * - Solid 3D puffy clouds with instant binary toggle below 3.5 distance
+ * Cartoon Earth Sphere
+ * Texture: world_map_4096.png (Equirectangular, -180 to 180, 90 to -90)
+ * Material: 100% OPAQUE MeshStandardMaterial with high roughness
+ * No transparency, no glow shell, no color tinting.
  */
 export const CleanEarth: FC<CleanEarthProps> = ({
   radius = EARTH_CONFIG.PLANET_RADIUS,
-  sunPosition = EARTH_CONFIG.lighting.keySunPosition,
 }) => {
   const earthMeshRef = useRef<THREE.Mesh>(null);
 
-  // Load Land/Ocean Mask & Elevation Topology
-  const [maskMap, topologyMap] = useLoader(THREE.TextureLoader, [
-    EARTH_CONFIG.textures.mask,
-    EARTH_CONFIG.textures.topology,
-  ]);
+  // Load world_map_4096.png texture
+  const colorMap = useLoader(THREE.TextureLoader, EARTH_CONFIG.textures.worldMap);
 
-  maskMap.anisotropy = 4;
-  topologyMap.anisotropy = 4;
+  useMemo(() => {
+    colorMap.colorSpace = THREE.SRGBColorSpace;
+    colorMap.anisotropy = 8;
+    colorMap.generateMipmaps = true;
+    colorMap.minFilter = THREE.LinearMipmapLinearFilter;
+    colorMap.magFilter = THREE.LinearFilter;
+    colorMap.needsUpdate = true;
+  }, [colorMap]);
 
-  const sunDir = useMemo(() => {
-    return new THREE.Vector3(...sunPosition);
-  }, [sunPosition]);
-
-  // Clean, fully opaque toon Earth material
+  // Clean, opaque toon Earth material with true texture colors
   const earthMaterial = useMemo(() => {
-    return createOpaqueToonEarthMaterial({
-      maskMap,
-      topologyMap,
-      sunPosition: sunDir,
+    return new THREE.MeshStandardMaterial({
+      map: colorMap,
+      roughness: 0.92,
+      metalness: 0.0,
+      color: '#ffffff', // No color tinting that changes map colors
+      transparent: false,
+      depthWrite: true,
     });
-  }, [maskMap, topologyMap, sunDir]);
+  }, [colorMap]);
 
-  // 192x192 smooth sphere geometry
+  // 192x192 smooth sphere geometry matching Three.js UV mapping
   const sphereGeom = useMemo(() => {
     return new THREE.SphereGeometry(
       radius,
@@ -57,8 +53,8 @@ export const CleanEarth: FC<CleanEarthProps> = ({
   }, [radius]);
 
   return (
-    <group name="opaque-toon-earth">
-      {/* 1. Smooth Cartoon Earth Sphere */}
+    <group name="clean-earth">
+      {/* 1. Opaque Earth Sphere (No extra rotation applied) */}
       <mesh
         ref={earthMeshRef}
         geometry={sphereGeom}
@@ -67,7 +63,7 @@ export const CleanEarth: FC<CleanEarthProps> = ({
         castShadow
       />
 
-      {/* 2. Solid Dark-Blue Inverted-Hull Cartoon Outline (scale 1.018, BackSide, transparent: false, depthWrite: true) */}
+      {/* 2. Solid Dark-Blue Inverted-Hull Cartoon Outline (scale 1.018, BackSide) */}
       <mesh scale={EARTH_CONFIG.OUTLINE_SCALE}>
         <sphereGeometry args={[radius, 96, 64]} />
         <meshBasicMaterial
@@ -78,7 +74,7 @@ export const CleanEarth: FC<CleanEarthProps> = ({
         />
       </mesh>
 
-      {/* 3. Fully Opaque Puffy 3D Clouds (Instant binary hide on close view, zero fade) */}
+      {/* 3. Fully Opaque Puffy 3D Clouds */}
       <OpaqueClouds />
     </group>
   );

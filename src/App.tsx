@@ -9,6 +9,8 @@ import { DebugOverlay } from './components/UI/DebugOverlay';
 import { BlobDebugPage } from './pages/BlobDebugPage';
 import { useGlobeData } from './hooks/useGlobeData';
 import { generateCountryBlobs } from './utils/blobPlacement';
+import { loadLandMask, isLandMaskReady } from './utils/terrainSampler';
+import { runLandmarkStartupCheck } from './utils/landmarkCheck';
 import type { ControlsHandle } from './components/Globe/Controls';
 import type { BlobInstanceData } from './types';
 
@@ -19,7 +21,14 @@ export function App() {
   const [selectedBlob, setSelectedBlob] = useState<BlobInstanceData | null>(null);
   const [hoveredBlob, setHoveredBlob] = useState<BlobInstanceData | null>(null);
   const [debug, setDebug] = useState<boolean>(false);
+  const [showMarkers, setShowMarkers] = useState<boolean>(false);
+  const [maskReady, setMaskReady] = useState<boolean>(isLandMaskReady());
   
+  // Preload land mask texture for pixel-level sampling
+  useEffect(() => {
+    loadLandMask().then(() => setMaskReady(true));
+  }, []);
+
   // Check if initial route is /debug/blob
   const [isDebugBlobStudio, setIsDebugBlobStudio] = useState<boolean>(() => {
     return (
@@ -33,7 +42,7 @@ export function App() {
 
   // 2. Compute non-overlapping blob placements on the terrain surface
   const allBlobs = useMemo(() => {
-    if (!data || !data.countries) return [];
+    if (!data || !data.countries || !maskReady) return [];
 
     const list: BlobInstanceData[] = [];
     for (const country of data.countries) {
@@ -41,15 +50,24 @@ export function App() {
       list.push(...countryBlobs);
     }
     return list;
-  }, [data, maxListeners]);
+  }, [data, maskReady, maxListeners]);
 
-  // 3. Keyboard Shortcuts: 'Escape' to deselect & return, 'D' to toggle debug
+  // 3. Dev-only startup check: verify all blobs on land & landmark continents
+  useEffect(() => {
+    if (import.meta.env.DEV && allBlobs.length > 0) {
+      runLandmarkStartupCheck(allBlobs);
+    }
+  }, [allBlobs]);
+
+  // 4. Keyboard Shortcuts: 'Escape' to deselect & return, 'D' to toggle debug, 'M' to toggle country markers
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedBlob(null);
       } else if (e.key === 'd' || e.key === 'D') {
         setDebug((prev) => !prev);
+      } else if (e.key === 'm' || e.key === 'M') {
+        setShowMarkers((prev) => !prev);
       }
     };
 
@@ -132,6 +150,14 @@ export function App() {
         countryCount={data?.countries.length || 0}
       />
 
+      {/* Debug Marker Mode Indicator (Toggle with 'M') */}
+      {showMarkers && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-full bg-neutral-900/90 text-yellow-300 border border-yellow-400/50 shadow-xl text-xs font-mono font-semibold flex items-center gap-2 animate-pulse">
+          <span>📍 Country Coordinates Active</span>
+          <span className="text-[10px] text-neutral-400">(Press M to hide)</span>
+        </div>
+      )}
+
       {/* 3D WebGL Canvas Scene */}
       <Scene
         ref={controlsRef}
@@ -141,6 +167,7 @@ export function App() {
         onSelectBlob={setSelectedBlob}
         onHoverBlob={setHoveredBlob}
         debug={debug}
+        showMarkers={showMarkers}
         onInteractionStart={handleInteractionStart}
         onInteractionEnd={handleInteractionEnd}
       />
@@ -152,6 +179,8 @@ export function App() {
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onResetCamera={handleResetCamera}
+        showMarkers={showMarkers}
+        onToggleMarkers={() => setShowMarkers((prev) => !prev)}
       />
 
       {/* Error Banner if data fetch fails */}

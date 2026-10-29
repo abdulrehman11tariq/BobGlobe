@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { Play, Pause, Plus, Minus, RotateCcw, Compass } from 'lucide-react';
+import { Play, Pause, Plus, Minus, RotateCcw, Compass, MapPin } from 'lucide-react';
 
 interface ControlsOverlayProps {
   autoRotate: boolean;
@@ -7,6 +7,8 @@ interface ControlsOverlayProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetCamera: () => void;
+  showMarkers?: boolean;
+  onToggleMarkers?: () => void;
 }
 
 export const ControlsOverlay: FC<ControlsOverlayProps> = ({
@@ -15,6 +17,8 @@ export const ControlsOverlay: FC<ControlsOverlayProps> = ({
   onZoomIn,
   onZoomOut,
   onResetCamera,
+  showMarkers = false,
+  onToggleMarkers,
 }) => {
   return (
     <>
@@ -31,6 +35,18 @@ export const ControlsOverlay: FC<ControlsOverlayProps> = ({
             <Play className="w-5 h-5 transition-transform group-hover:scale-110 ml-0.5" />
           )}
         </button>
+
+        {onToggleMarkers && (
+          <button
+            onClick={onToggleMarkers}
+            title={showMarkers ? 'Hide Country Coordinates (M)' : 'Show Country Coordinates (M)'}
+            className={`glass-btn w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+              showMarkers ? 'text-yellow-400 bg-neutral-800/90 border-yellow-400/60 ring-2 ring-yellow-400/30' : 'text-slate-200 hover:text-yellow-400'
+            }`}
+          >
+            <MapPin className="w-5 h-5 transition-transform group-hover:scale-110" />
+          </button>
+        )}
 
         <button
           onClick={onZoomIn}

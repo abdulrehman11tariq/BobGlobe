@@ -1,5 +1,7 @@
 /**
- * Simple Green + Blue Cartoon Earth Tuning Configuration
+ * Earth & Map Configuration
+ * Texture: world_map_4096.png (Equirectangular, -180 to 180 left to right, 90 to -90 top to bottom)
+ * Mask: land_mask_4096.png (White = land, Black = water)
  * HARD RULE: ZERO TRANSPARENCY IN 3D (All materials transparent: false, depthWrite: true)
  */
 
@@ -7,28 +9,22 @@ export const EARTH_CONFIG = {
   // Planet Geometry
   PLANET_RADIUS: 2.5,
   SPHERE_SEGMENTS: 192,            // 192x192 smooth sphere
+  LAND_ELEVATION: 0.02,            // Slight height lift for land vertices/blobs (0.8% of radius)
 
-  // Two Main Colors + Accents (Toon Hard-Edged Bands)
+  // Colors & Outline
   colors: {
-    ocean: '#3FA7D6',              // Solid friendly blue
-    oceanShallow: '#6CC4EC',       // Lighter blue shallow coast band
-    land: '#7BC96F',               // Solid fresh green
-    mountain: '#5FB35A',           // Darker green for high ground/mountains
-    sand: '#F2E2A0',               // Light sand-yellow coastline strip
-    pole: '#FFFFFF',               // Solid white polar caps
-    poleLatitude: 75,              // Latitude threshold for polar ice caps
+    ocean: '#3FA7D6',
+    land: '#7BC96F',
     outline: '#1a365d',            // Solid dark-blue cartoon outline
   },
 
-  // Surface Relief
-  RELIEF_BUMP_STRENGTH: 0.15,      // Very gentle elevation bump (faintly visible)
-  DISPLACEMENT_SCALE: 0.024,       // Subtle mountain relief displacement
+  // Inverted-hull outline scale
   OUTLINE_SCALE: 1.018,            // 1.8% thicker solid inverted-hull outline
 
   // Opaque 3D Puffy Clouds
   clouds: {
     count: 12,                     // 10 to 14 solid puffy clouds
-    altitude: 2.525,               // Floating just above the surface
+    altitude: 2.535,               // Floating just above the surface
     speedMin: 0.005,
     speedMax: 0.012,
     hideDistance: 3.5,             // Distance where clouds instantly hide (no fade)
@@ -54,7 +50,10 @@ export const EARTH_CONFIG = {
 
   // Textures
   textures: {
-    mask: '/textures/earth_specular.jpg',
+    worldMap: '/textures/world_map_4096.png',
+    worldMapLow: '/textures/world_map_2048.png',
+    landMask: '/textures/land_mask_4096.png',
+    mask: '/textures/land_mask_4096.png',
     topology: '/textures/earth_topology.png',
   },
 } as const;

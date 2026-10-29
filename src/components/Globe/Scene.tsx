@@ -5,6 +5,7 @@ import { CleanEarth } from './CleanEarth';
 import { CozySpaceBackdrop } from './CozySpaceBackdrop';
 import { BlobsLayer } from './BlobsLayer';
 import { CameraController } from './CameraController';
+import { CountryMarkers } from './CountryMarkers';
 import { Controls, type ControlsHandle } from './Controls';
 import type { BlobInstanceData } from '../../types';
 
@@ -15,6 +16,7 @@ interface SceneProps {
   onSelectBlob: (blob: BlobInstanceData | null) => void;
   onHoverBlob: (blob: BlobInstanceData | null) => void;
   debug?: boolean;
+  showMarkers?: boolean;
   onInteractionStart?: () => void;
   onInteractionEnd?: () => void;
   children?: ReactNode;
@@ -29,6 +31,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
       onSelectBlob,
       onHoverBlob,
       debug = false,
+      showMarkers = false,
       onInteractionStart,
       onInteractionEnd,
       children,
@@ -90,8 +93,10 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
             {/* Clean, Soft, Premium Earth */}
             <CleanEarth
               radius={EARTH_CONFIG.PLANET_RADIUS}
-              sunPosition={EARTH_CONFIG.lighting.keySunPosition}
             />
+
+            {/* Debug Country Coordinate Markers (Toggled with 'M' key) */}
+            <CountryMarkers visible={showMarkers} />
 
             {/* Kawaii Mochi Blobs (Star of the show!) */}
             <BlobsLayer
