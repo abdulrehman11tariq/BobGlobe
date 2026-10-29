@@ -1,0 +1,1362 @@
+[
+  {
+    "id": 1,
+    "code": "CN",
+    "name": "China",
+    "lastfmName": "China",
+    "lat": 32.461,
+    "lng": 109.464,
+    "pop": 1397715000,
+    "areaDeg2": 947.9
+  },
+  {
+    "id": 2,
+    "code": "IN",
+    "name": "India",
+    "lastfmName": "India",
+    "lat": 22.357,
+    "lng": 79.221,
+    "pop": 1366417754,
+    "areaDeg2": 277.8
+  },
+  {
+    "id": 3,
+    "code": "US",
+    "name": "United States of America",
+    "lastfmName": "United States",
+    "lat": 39.112,
+    "lng": -98.16,
+    "pop": 328239523,
+    "areaDeg2": 834.5
+  },
+  {
+    "id": 4,
+    "code": "ID",
+    "name": "Indonesia",
+    "lastfmName": "Indonesia",
+    "lat": -0.962,
+    "lng": 114.142,
+    "pop": 270625568,
+    "areaDeg2": 43
+  },
+  {
+    "id": 5,
+    "code": "PK",
+    "name": "Pakistan",
+    "lastfmName": "Pakistan",
+    "lat": 27.768,
+    "lng": 67.268,
+    "pop": 216565318,
+    "areaDeg2": 81.7
+  },
+  {
+    "id": 6,
+    "code": "BR",
+    "name": "Brazil",
+    "lastfmName": "Brazil",
+    "lat": -12.654,
+    "lng": -49.026,
+    "pop": 211049527,
+    "areaDeg2": 702.7
+  },
+  {
+    "id": 7,
+    "code": "NG",
+    "name": "Nigeria",
+    "lastfmName": "Nigeria",
+    "lat": 9.378,
+    "lng": 7.281,
+    "pop": 200963599,
+    "areaDeg2": 74.8
+  },
+  {
+    "id": 8,
+    "code": "BD",
+    "name": "Bangladesh",
+    "lastfmName": "Bangladesh",
+    "lat": 24.291,
+    "lng": 89.718,
+    "pop": 163046161,
+    "areaDeg2": 11.8
+  },
+  {
+    "id": 9,
+    "code": "RU",
+    "name": "Russia",
+    "lastfmName": "Russian Federation",
+    "lat": 63.583,
+    "lng": 94.452,
+    "pop": 144373535,
+    "areaDeg2": 2821.7
+  },
+  {
+    "id": 10,
+    "code": "MX",
+    "name": "Mexico",
+    "lastfmName": "Mexico",
+    "lat": 23.482,
+    "lng": -101.743,
+    "pop": 127575529,
+    "areaDeg2": 173.8
+  },
+  {
+    "id": 11,
+    "code": "JP",
+    "name": "Japan",
+    "lastfmName": "Japan",
+    "lat": 36.759,
+    "lng": 139.521,
+    "pop": 126264931,
+    "areaDeg2": 23
+  },
+  {
+    "id": 12,
+    "code": "ET",
+    "name": "Ethiopia",
+    "lastfmName": "Ethiopia",
+    "lat": 8.511,
+    "lng": 38.441,
+    "pop": 112078730,
+    "areaDeg2": 92.7
+  },
+  {
+    "id": 13,
+    "code": "PH",
+    "name": "Philippines",
+    "lastfmName": "Philippines",
+    "lat": 16.938,
+    "lng": 121.362,
+    "pop": 108116615,
+    "areaDeg2": 8.9
+  },
+  {
+    "id": 14,
+    "code": "EG",
+    "name": "Egypt",
+    "lastfmName": "Egypt",
+    "lat": 26.278,
+    "lng": 29.29,
+    "pop": 100388073,
+    "areaDeg2": 90.8
+  },
+  {
+    "id": 15,
+    "code": "VN",
+    "name": "Vietnam",
+    "lastfmName": "Viet Nam",
+    "lat": 21.702,
+    "lng": 105.354,
+    "pop": 96462106,
+    "areaDeg2": 27.8
+  },
+  {
+    "id": 16,
+    "code": "CD",
+    "name": "Dem. Rep. Congo",
+    "lastfmName": "Dem. Rep. Congo",
+    "lat": -1.726,
+    "lng": 23.27,
+    "pop": 86790567,
+    "areaDeg2": 189.6
+  },
+  {
+    "id": 17,
+    "code": "TR",
+    "name": "Turkey",
+    "lastfmName": "Turkey",
+    "lat": 39.057,
+    "lng": 33.08,
+    "pop": 83429615,
+    "areaDeg2": 78.7
+  },
+  {
+    "id": 18,
+    "code": "DE",
+    "name": "Germany",
+    "lastfmName": "Germany",
+    "lat": 51.02,
+    "lng": 9.65,
+    "pop": 83132799,
+    "areaDeg2": 45.6
+  },
+  {
+    "id": 19,
+    "code": "IR",
+    "name": "Iran",
+    "lastfmName": "Iran, Islamic Republic of",
+    "lat": 32.096,
+    "lng": 55.51,
+    "pop": 82913906,
+    "areaDeg2": 155.9
+  },
+  {
+    "id": 20,
+    "code": "TH",
+    "name": "Thailand",
+    "lastfmName": "Thailand",
+    "lat": 15.457,
+    "lng": 101.392,
+    "pop": 69625582,
+    "areaDeg2": 43.2
+  },
+  {
+    "id": 21,
+    "code": "FR",
+    "name": "France",
+    "lastfmName": "France",
+    "lat": 46.744,
+    "lng": 2.571,
+    "pop": 67059887,
+    "areaDeg2": 63.3
+  },
+  {
+    "id": 22,
+    "code": "GB",
+    "name": "United Kingdom",
+    "lastfmName": "United Kingdom",
+    "lat": 52.482,
+    "lng": -1.284,
+    "pop": 66834405,
+    "areaDeg2": 29.7
+  },
+  {
+    "id": 23,
+    "code": "IT",
+    "name": "Italy",
+    "lastfmName": "Italy",
+    "lat": 45.128,
+    "lng": 10.866,
+    "pop": 60297396,
+    "areaDeg2": 28
+  },
+  {
+    "id": 24,
+    "code": "ZA",
+    "name": "South Africa",
+    "lastfmName": "South Africa",
+    "lat": -30.232,
+    "lng": 23.286,
+    "pop": 58558270,
+    "areaDeg2": 113.1
+  },
+  {
+    "id": 25,
+    "code": "TZ",
+    "name": "Tanzania",
+    "lastfmName": "Tanzania, United Republic of",
+    "lat": -5.572,
+    "lng": 34.11,
+    "pop": 58005463,
+    "areaDeg2": 76.8
+  },
+  {
+    "id": 26,
+    "code": "MM",
+    "name": "Myanmar",
+    "lastfmName": "Myanmar",
+    "lat": 21.64,
+    "lng": 95.923,
+    "pop": 54045420,
+    "areaDeg2": 57.3
+  },
+  {
+    "id": 27,
+    "code": "KE",
+    "name": "Kenya",
+    "lastfmName": "Kenya",
+    "lat": 0.44,
+    "lng": 37.852,
+    "pop": 52573973,
+    "areaDeg2": 48.1
+  },
+  {
+    "id": 28,
+    "code": "KR",
+    "name": "South Korea",
+    "lastfmName": "South Korea",
+    "lat": 36.301,
+    "lng": 128.102,
+    "pop": 51709098,
+    "areaDeg2": 9.4
+  },
+  {
+    "id": 29,
+    "code": "CO",
+    "name": "Colombia",
+    "lastfmName": "Colombia",
+    "lat": 3.383,
+    "lng": -73.276,
+    "pop": 50339443,
+    "areaDeg2": 92.5
+  },
+  {
+    "id": 30,
+    "code": "ES",
+    "name": "Spain",
+    "lastfmName": "Spain",
+    "lat": 39.993,
+    "lng": -3.454,
+    "pop": 47076781,
+    "areaDeg2": 52.5
+  },
+  {
+    "id": 31,
+    "code": "AR",
+    "name": "Argentina",
+    "lastfmName": "Argentina",
+    "lat": -31.381,
+    "lng": -64.07,
+    "pop": 44938712,
+    "areaDeg2": 275.5
+  },
+  {
+    "id": 32,
+    "code": "UA",
+    "name": "Ukraine",
+    "lastfmName": "Ukraine",
+    "lat": 49.602,
+    "lng": 32.36,
+    "pop": 44385155,
+    "areaDeg2": 70.5
+  },
+  {
+    "id": 33,
+    "code": "UG",
+    "name": "Uganda",
+    "lastfmName": "Uganda",
+    "lat": 1.975,
+    "lng": 33.004,
+    "pop": 44269594,
+    "areaDeg2": 19.6
+  },
+  {
+    "id": 34,
+    "code": "DZ",
+    "name": "Algeria",
+    "lastfmName": "Algeria",
+    "lat": 27.455,
+    "lng": 3.155,
+    "pop": 43053054,
+    "areaDeg2": 213.7
+  },
+  {
+    "id": 35,
+    "code": "SD",
+    "name": "Sudan",
+    "lastfmName": "Sudan",
+    "lat": 16.647,
+    "lng": 29.332,
+    "pop": 42813238,
+    "areaDeg2": 157
+  },
+  {
+    "id": 36,
+    "code": "IQ",
+    "name": "Iraq",
+    "lastfmName": "Iraq",
+    "lat": 33.256,
+    "lng": 43.087,
+    "pop": 39309783,
+    "areaDeg2": 42.2
+  },
+  {
+    "id": 37,
+    "code": "AF",
+    "name": "Afghanistan",
+    "lastfmName": "Afghanistan",
+    "lat": 34.346,
+    "lng": 66.647,
+    "pop": 38041754,
+    "areaDeg2": 62.6
+  },
+  {
+    "id": 38,
+    "code": "PL",
+    "name": "Poland",
+    "lastfmName": "Poland",
+    "lat": 51.91,
+    "lng": 20.462,
+    "pop": 37970874,
+    "areaDeg2": 41.2
+  },
+  {
+    "id": 39,
+    "code": "CA",
+    "name": "Canada",
+    "lastfmName": "Canada",
+    "lat": 58.789,
+    "lng": -119.045,
+    "pop": 37589262,
+    "areaDeg2": 1242.1
+  },
+  {
+    "id": 40,
+    "code": "MA",
+    "name": "Morocco",
+    "lastfmName": "Morocco",
+    "lat": 31.881,
+    "lng": -6.451,
+    "pop": 36471769,
+    "areaDeg2": 54.4
+  },
+  {
+    "id": 41,
+    "code": "SA",
+    "name": "Saudi Arabia",
+    "lastfmName": "Saudi Arabia",
+    "lat": 23.468,
+    "lng": 45.005,
+    "pop": 34268528,
+    "areaDeg2": 170.9
+  },
+  {
+    "id": 42,
+    "code": "UZ",
+    "name": "Uzbekistan",
+    "lastfmName": "Uzbekistan",
+    "lat": 41.464,
+    "lng": 64.054,
+    "pop": 33580650,
+    "areaDeg2": 48.5
+  },
+  {
+    "id": 43,
+    "code": "PE",
+    "name": "Peru",
+    "lastfmName": "Peru",
+    "lat": -12.983,
+    "lng": -73.08,
+    "pop": 32510453,
+    "areaDeg2": 106.5
+  },
+  {
+    "id": 44,
+    "code": "MY",
+    "name": "Malaysia",
+    "lastfmName": "Malaysia",
+    "lat": 2.463,
+    "lng": 113.776,
+    "pop": 31949777,
+    "areaDeg2": 15.8
+  },
+  {
+    "id": 45,
+    "code": "AO",
+    "name": "Angola",
+    "lastfmName": "Angola",
+    "lat": -13.163,
+    "lng": 17.775,
+    "pop": 31825295,
+    "areaDeg2": 103
+  },
+  {
+    "id": 46,
+    "code": "GH",
+    "name": "Ghana",
+    "lastfmName": "Ghana",
+    "lat": 7.039,
+    "lng": -1.203,
+    "pop": 30417856,
+    "areaDeg2": 19.6
+  },
+  {
+    "id": 47,
+    "code": "MZ",
+    "name": "Mozambique",
+    "lastfmName": "Mozambique",
+    "lat": -14.083,
+    "lng": 38.191,
+    "pop": 30366036,
+    "areaDeg2": 67.1
+  },
+  {
+    "id": 48,
+    "code": "YE",
+    "name": "Yemen",
+    "lastfmName": "Yemen",
+    "lat": 15.293,
+    "lng": 45,
+    "pop": 29161922,
+    "areaDeg2": 37.9
+  },
+  {
+    "id": 49,
+    "code": "NP",
+    "name": "Nepal",
+    "lastfmName": "Nepal",
+    "lat": 28.976,
+    "lng": 82.047,
+    "pop": 28608710,
+    "areaDeg2": 13.5
+  },
+  {
+    "id": 50,
+    "code": "VE",
+    "name": "Venezuela",
+    "lastfmName": "Venezuela, Bolivarian Republic of",
+    "lat": 7.2,
+    "lng": -64.244,
+    "pop": 28515829,
+    "areaDeg2": 74.5
+  },
+  {
+    "id": 51,
+    "code": "MG",
+    "name": "Madagascar",
+    "lastfmName": "Madagascar",
+    "lat": -18.377,
+    "lng": 46.685,
+    "pop": 26969307,
+    "areaDeg2": 51
+  },
+  {
+    "id": 52,
+    "code": "CM",
+    "name": "Cameroon",
+    "lastfmName": "Cameroon",
+    "lat": 4.549,
+    "lng": 12.425,
+    "pop": 25876380,
+    "areaDeg2": 37.9
+  },
+  {
+    "id": 53,
+    "code": "CI",
+    "name": "Côte d'Ivoire",
+    "lastfmName": "Côte d'Ivoire",
+    "lat": 7.513,
+    "lng": -5.53,
+    "pop": 25716544,
+    "areaDeg2": 26.3
+  },
+  {
+    "id": 54,
+    "code": "KP",
+    "name": "North Korea",
+    "lastfmName": "North Korea",
+    "lat": 39.863,
+    "lng": 126.429,
+    "pop": 25666161,
+    "areaDeg2": 13
+  },
+  {
+    "id": 55,
+    "code": "AU",
+    "name": "Australia",
+    "lastfmName": "Australia",
+    "lat": -23.13,
+    "lng": 132.394,
+    "pop": 25364307,
+    "areaDeg2": 686.7
+  },
+  {
+    "id": 56,
+    "code": "TW",
+    "name": "Taiwan",
+    "lastfmName": "Taiwan",
+    "lat": 23.522,
+    "lng": 120.817,
+    "pop": 23568378,
+    "areaDeg2": 3.2
+  },
+  {
+    "id": 57,
+    "code": "NE",
+    "name": "Niger",
+    "lastfmName": "Niger",
+    "lat": 17.638,
+    "lng": 10.44,
+    "pop": 23310715,
+    "areaDeg2": 100.6
+  },
+  {
+    "id": 58,
+    "code": "LK",
+    "name": "Sri Lanka",
+    "lastfmName": "Sri Lanka",
+    "lat": 7.096,
+    "lng": 80.853,
+    "pop": 21803000,
+    "areaDeg2": 5.4
+  },
+  {
+    "id": 59,
+    "code": "BF",
+    "name": "Burkina Faso",
+    "lastfmName": "Burkina Faso",
+    "lat": 12.839,
+    "lng": -0.918,
+    "pop": 20321378,
+    "areaDeg2": 22.7
+  },
+  {
+    "id": 60,
+    "code": "ML",
+    "name": "Mali",
+    "lastfmName": "Mali",
+    "lat": 18.634,
+    "lng": -2.055,
+    "pop": 19658031,
+    "areaDeg2": 106.8
+  },
+  {
+    "id": 61,
+    "code": "RO",
+    "name": "Romania",
+    "lastfmName": "Romania",
+    "lat": 45.727,
+    "lng": 25.14,
+    "pop": 19356544,
+    "areaDeg2": 27.4
+  },
+  {
+    "id": 62,
+    "code": "CL",
+    "name": "Chile",
+    "lastfmName": "Chile",
+    "lat": -23.314,
+    "lng": -69.103,
+    "pop": 18952038,
+    "areaDeg2": 66.9
+  },
+  {
+    "id": 63,
+    "code": "MW",
+    "name": "Malawi",
+    "lastfmName": "Malawi",
+    "lat": -13.414,
+    "lng": 33.768,
+    "pop": 18628747,
+    "areaDeg2": 9.9
+  },
+  {
+    "id": 64,
+    "code": "KZ",
+    "name": "Kazakhstan",
+    "lastfmName": "Kazakhstan",
+    "lat": 48.456,
+    "lng": 68.934,
+    "pop": 18513930,
+    "areaDeg2": 329.3
+  },
+  {
+    "id": 65,
+    "code": "ZM",
+    "name": "Zambia",
+    "lastfmName": "Zambia",
+    "lat": -14.738,
+    "lng": 26.155,
+    "pop": 17861030,
+    "areaDeg2": 62.9
+  },
+  {
+    "id": 66,
+    "code": "EC",
+    "name": "Ecuador",
+    "lastfmName": "Ecuador",
+    "lat": -1.214,
+    "lng": -78.257,
+    "pop": 17373662,
+    "areaDeg2": 20
+  },
+  {
+    "id": 67,
+    "code": "NL",
+    "name": "Netherlands",
+    "lastfmName": "Netherlands",
+    "lat": 52.184,
+    "lng": 5.294,
+    "pop": 17332850,
+    "areaDeg2": 4.7
+  },
+  {
+    "id": 68,
+    "code": "SY",
+    "name": "Syria",
+    "lastfmName": "Syrian Arab Republic",
+    "lat": 35.039,
+    "lng": 38.16,
+    "pop": 17070135,
+    "areaDeg2": 18.4
+  },
+  {
+    "id": 69,
+    "code": "GT",
+    "name": "Guatemala",
+    "lastfmName": "Guatemala",
+    "lat": 15.011,
+    "lng": -90.487,
+    "pop": 16604026,
+    "areaDeg2": 9.1
+  },
+  {
+    "id": 70,
+    "code": "KH",
+    "name": "Cambodia",
+    "lastfmName": "Cambodia",
+    "lat": 12.62,
+    "lng": 104.446,
+    "pop": 16486542,
+    "areaDeg2": 15
+  },
+  {
+    "id": 71,
+    "code": "SN",
+    "name": "Senegal",
+    "lastfmName": "Senegal",
+    "lat": 15.201,
+    "lng": -14.916,
+    "pop": 16296364,
+    "areaDeg2": 16.5
+  },
+  {
+    "id": 72,
+    "code": "TD",
+    "name": "Chad",
+    "lastfmName": "Chad",
+    "lat": 17.301,
+    "lng": 19.433,
+    "pop": 15946876,
+    "areaDeg2": 106.8
+  },
+  {
+    "id": 73,
+    "code": "ZW",
+    "name": "Zimbabwe",
+    "lastfmName": "Zimbabwe",
+    "lat": -18.992,
+    "lng": 29.936,
+    "pop": 14645468,
+    "areaDeg2": 33.4
+  },
+  {
+    "id": 74,
+    "code": "GN",
+    "name": "Guinea",
+    "lastfmName": "Guinea",
+    "lat": 10.665,
+    "lng": -10.013,
+    "pop": 12771246,
+    "areaDeg2": 20.1
+  },
+  {
+    "id": 75,
+    "code": "RW",
+    "name": "Rwanda",
+    "lastfmName": "Rwanda",
+    "lat": -1.841,
+    "lng": 30.277,
+    "pop": 12626950,
+    "areaDeg2": 2.1
+  },
+  {
+    "id": 76,
+    "code": "BJ",
+    "name": "Benin",
+    "lastfmName": "Benin",
+    "lat": 10.36,
+    "lng": 2.395,
+    "pop": 11801151,
+    "areaDeg2": 9.6
+  },
+  {
+    "id": 77,
+    "code": "TN",
+    "name": "Tunisia",
+    "lastfmName": "Tunisia",
+    "lat": 35.368,
+    "lng": 9.544,
+    "pop": 11694719,
+    "areaDeg2": 15.3
+  },
+  {
+    "id": 78,
+    "code": "BI",
+    "name": "Burundi",
+    "lastfmName": "Burundi",
+    "lat": -3.418,
+    "lng": 29.812,
+    "pop": 11530580,
+    "areaDeg2": 2.2
+  },
+  {
+    "id": 79,
+    "code": "BO",
+    "name": "Bolivia",
+    "lastfmName": "Bolivia, Plurinational State of",
+    "lat": -16.687,
+    "lng": -64.678,
+    "pop": 11513100,
+    "areaDeg2": 92.2
+  },
+  {
+    "id": 80,
+    "code": "BE",
+    "name": "Belgium",
+    "lastfmName": "Belgium",
+    "lat": 50.771,
+    "lng": 4.655,
+    "pop": 11484055,
+    "areaDeg2": 3.9
+  },
+  {
+    "id": 81,
+    "code": "CU",
+    "name": "Cuba",
+    "lastfmName": "Cuba",
+    "lat": 20.599,
+    "lng": -76.404,
+    "pop": 11333483,
+    "areaDeg2": 9.2
+  },
+  {
+    "id": 82,
+    "code": "HT",
+    "name": "Haiti",
+    "lastfmName": "Haiti",
+    "lat": 19.227,
+    "lng": -72.243,
+    "pop": 11263077,
+    "areaDeg2": 2.2
+  },
+  {
+    "id": 83,
+    "code": "SS",
+    "name": "S. Sudan",
+    "lastfmName": "S. Sudan",
+    "lat": 7.118,
+    "lng": 30.446,
+    "pop": 11062113,
+    "areaDeg2": 50.9
+  },
+  {
+    "id": 84,
+    "code": "DO",
+    "name": "Dominican Rep.",
+    "lastfmName": "Dominican Rep.",
+    "lat": 19.061,
+    "lng": -70.913,
+    "pop": 10738958,
+    "areaDeg2": 4.2
+  },
+  {
+    "id": 85,
+    "code": "GR",
+    "name": "Greece",
+    "lastfmName": "Greece",
+    "lat": 39.794,
+    "lng": 21.683,
+    "pop": 10716322,
+    "areaDeg2": 11.2
+  },
+  {
+    "id": 86,
+    "code": "CZ",
+    "name": "Czechia",
+    "lastfmName": "Czech Republic",
+    "lat": 49.781,
+    "lng": 14.276,
+    "pop": 10669709,
+    "areaDeg2": 9.8
+  },
+  {
+    "id": 87,
+    "code": "SE",
+    "name": "Sweden",
+    "lastfmName": "Sweden",
+    "lat": 65.588,
+    "lng": 18.266,
+    "pop": 10285453,
+    "areaDeg2": 77.8
+  },
+  {
+    "id": 88,
+    "code": "PT",
+    "name": "Portugal",
+    "lastfmName": "Portugal",
+    "lat": 40.674,
+    "lng": -7.786,
+    "pop": 10269417,
+    "areaDeg2": 9.2
+  },
+  {
+    "id": 89,
+    "code": "SO",
+    "name": "Somalia",
+    "lastfmName": "Somalia",
+    "lat": 2.553,
+    "lng": 42.998,
+    "pop": 10192317,
+    "areaDeg2": 38.5
+  },
+  {
+    "id": 90,
+    "code": "JO",
+    "name": "Jordan",
+    "lastfmName": "Jordan",
+    "lat": 30.773,
+    "lng": 36.342,
+    "pop": 10101694,
+    "areaDeg2": 8.4
+  },
+  {
+    "id": 91,
+    "code": "AZ",
+    "name": "Azerbaijan",
+    "lastfmName": "Azerbaijan",
+    "lat": 40.375,
+    "lng": 47.118,
+    "pop": 10023318,
+    "areaDeg2": 8.7
+  },
+  {
+    "id": 92,
+    "code": "AE",
+    "name": "United Arab Emirates",
+    "lastfmName": "United Arab Emirates",
+    "lat": 23.479,
+    "lng": 54.543,
+    "pop": 9770529,
+    "areaDeg2": 6.3
+  },
+  {
+    "id": 93,
+    "code": "HU",
+    "name": "Hungary",
+    "lastfmName": "Hungary",
+    "lat": 47.206,
+    "lng": 20.386,
+    "pop": 9769949,
+    "areaDeg2": 11.1
+  },
+  {
+    "id": 94,
+    "code": "HN",
+    "name": "Honduras",
+    "lastfmName": "Honduras",
+    "lat": 14.744,
+    "lng": -87.181,
+    "pop": 9746117,
+    "areaDeg2": 9.5
+  },
+  {
+    "id": 95,
+    "code": "BY",
+    "name": "Belarus",
+    "lastfmName": "Belarus",
+    "lat": 53.761,
+    "lng": 28.483,
+    "pop": 9466856,
+    "areaDeg2": 28.1
+  },
+  {
+    "id": 96,
+    "code": "TJ",
+    "name": "Tajikistan",
+    "lastfmName": "Tajikistan",
+    "lat": 38.344,
+    "lng": 72.782,
+    "pop": 9321018,
+    "areaDeg2": 14.7
+  },
+  {
+    "id": 97,
+    "code": "IL",
+    "name": "Israel",
+    "lastfmName": "Israel",
+    "lat": 30.923,
+    "lng": 34.851,
+    "pop": 9053300,
+    "areaDeg2": 2.1
+  },
+  {
+    "id": 98,
+    "code": "AT",
+    "name": "Austria",
+    "lastfmName": "Austria",
+    "lat": 47.73,
+    "lng": 15.331,
+    "pop": 8877067,
+    "areaDeg2": 10.1
+  },
+  {
+    "id": 99,
+    "code": "PG",
+    "name": "Papua New Guinea",
+    "lastfmName": "Papua New Guinea",
+    "lat": -5.52,
+    "lng": 142.988,
+    "pop": 8776109,
+    "areaDeg2": 32.7
+  },
+  {
+    "id": 100,
+    "code": "CH",
+    "name": "Switzerland",
+    "lastfmName": "Switzerland",
+    "lat": 46.698,
+    "lng": 7.477,
+    "pop": 8574832,
+    "areaDeg2": 4.9
+  },
+  {
+    "id": 101,
+    "code": "TG",
+    "name": "Togo",
+    "lastfmName": "Togo",
+    "lat": 8.877,
+    "lng": 1.04,
+    "pop": 8082366,
+    "areaDeg2": 4.7
+  },
+  {
+    "id": 102,
+    "code": "SL",
+    "name": "Sierra Leone",
+    "lastfmName": "Sierra Leone",
+    "lat": 8.669,
+    "lng": -11.764,
+    "pop": 7813215,
+    "areaDeg2": 5.8
+  },
+  {
+    "id": 103,
+    "code": "HK",
+    "name": "Hong Kong",
+    "lastfmName": "Hong Kong",
+    "lat": 22.458,
+    "lng": 114.143,
+    "pop": 7507400,
+    "areaDeg2": 0.1
+  },
+  {
+    "id": 104,
+    "code": "LA",
+    "name": "Laos",
+    "lastfmName": "Lao People's Democratic Republic",
+    "lat": 19.648,
+    "lng": 102.578,
+    "pop": 7169455,
+    "areaDeg2": 19.5
+  },
+  {
+    "id": 105,
+    "code": "PY",
+    "name": "Paraguay",
+    "lastfmName": "Paraguay",
+    "lat": -21.613,
+    "lng": -60.122,
+    "pop": 7044636,
+    "areaDeg2": 35.3
+  },
+  {
+    "id": 106,
+    "code": "BG",
+    "name": "Bulgaria",
+    "lastfmName": "Bulgaria",
+    "lat": 42.521,
+    "lng": 25.197,
+    "pop": 6975761,
+    "areaDeg2": 12.4
+  },
+  {
+    "id": 107,
+    "code": "RS",
+    "name": "Serbia",
+    "lastfmName": "Serbia",
+    "lat": 44.238,
+    "lng": 20.552,
+    "pop": 6944975,
+    "areaDeg2": 8.7
+  },
+  {
+    "id": 108,
+    "code": "LB",
+    "name": "Lebanon",
+    "lastfmName": "Lebanon",
+    "lat": 34.153,
+    "lng": 36.022,
+    "pop": 6855713,
+    "areaDeg2": 1
+  },
+  {
+    "id": 109,
+    "code": "LY",
+    "name": "Libya",
+    "lastfmName": "Libya",
+    "lat": 26.061,
+    "lng": 20.603,
+    "pop": 6777452,
+    "areaDeg2": 147.9
+  },
+  {
+    "id": 110,
+    "code": "NI",
+    "name": "Nicaragua",
+    "lastfmName": "Nicaragua",
+    "lat": 12.554,
+    "lng": -85.167,
+    "pop": 6545502,
+    "areaDeg2": 10.7
+  },
+  {
+    "id": 111,
+    "code": "KG",
+    "name": "Kyrgyzstan",
+    "lastfmName": "Kyrgyzstan",
+    "lat": 41.719,
+    "lng": 74.544,
+    "pop": 6456900,
+    "areaDeg2": 21.4
+  },
+  {
+    "id": 112,
+    "code": "SV",
+    "name": "El Salvador",
+    "lastfmName": "El Salvador",
+    "lat": 13.91,
+    "lng": -89.247,
+    "pop": 6453553,
+    "areaDeg2": 1.7
+  },
+  {
+    "id": 113,
+    "code": "ER",
+    "name": "Eritrea",
+    "lastfmName": "Eritrea",
+    "lat": 16.001,
+    "lng": 38.073,
+    "pop": 6081196,
+    "areaDeg2": 10.3
+  },
+  {
+    "id": 114,
+    "code": "TM",
+    "name": "Turkmenistan",
+    "lastfmName": "Turkmenistan",
+    "lat": 39.83,
+    "lng": 58.65,
+    "pop": 5942089,
+    "areaDeg2": 49.1
+  },
+  {
+    "id": 115,
+    "code": "DK",
+    "name": "Denmark",
+    "lastfmName": "Denmark",
+    "lat": 55.974,
+    "lng": 9.089,
+    "pop": 5818553,
+    "areaDeg2": 4.3
+  },
+  {
+    "id": 116,
+    "code": "SG",
+    "name": "Singapore",
+    "lastfmName": "Singapore",
+    "lat": 1.356,
+    "lng": 103.823,
+    "pop": 5703569,
+    "areaDeg2": 0
+  },
+  {
+    "id": 117,
+    "code": "FI",
+    "name": "Finland",
+    "lastfmName": "Finland",
+    "lat": 63.299,
+    "lng": 27.38,
+    "pop": 5520314,
+    "areaDeg2": 62
+  },
+  {
+    "id": 118,
+    "code": "SK",
+    "name": "Slovakia",
+    "lastfmName": "Slovakia",
+    "lat": 48.725,
+    "lng": 18.769,
+    "pop": 5454073,
+    "areaDeg2": 5.9
+  },
+  {
+    "id": 119,
+    "code": "CG",
+    "name": "Congo",
+    "lastfmName": "Congo",
+    "lat": 0.054,
+    "lng": 15.929,
+    "pop": 5380508,
+    "areaDeg2": 28.1
+  },
+  {
+    "id": 120,
+    "code": "NO",
+    "name": "Norway",
+    "lastfmName": "Norway",
+    "lat": 61.529,
+    "lng": 9.973,
+    "pop": 5347896,
+    "areaDeg2": 57.9
+  },
+  {
+    "id": 121,
+    "code": "CR",
+    "name": "Costa Rica",
+    "lastfmName": "Costa Rica",
+    "lat": 10.074,
+    "lng": -84.001,
+    "pop": 5047561,
+    "areaDeg2": 4.2
+  },
+  {
+    "id": 122,
+    "code": "OM",
+    "name": "Oman",
+    "lastfmName": "Oman",
+    "lat": 22.083,
+    "lng": 57.372,
+    "pop": 4974986,
+    "areaDeg2": 26.8
+  },
+  {
+    "id": 123,
+    "code": "IE",
+    "name": "Ireland",
+    "lastfmName": "Ireland",
+    "lat": 53.113,
+    "lng": -7.834,
+    "pop": 4941444,
+    "areaDeg2": 9.3
+  },
+  {
+    "id": 124,
+    "code": "LR",
+    "name": "Liberia",
+    "lastfmName": "Liberia",
+    "lat": 7.001,
+    "lng": -10.206,
+    "pop": 4937374,
+    "areaDeg2": 7.8
+  },
+  {
+    "id": 125,
+    "code": "NZ",
+    "name": "New Zealand",
+    "lastfmName": "New Zealand",
+    "lat": -45.256,
+    "lng": 169.16,
+    "pop": 4917000,
+    "areaDeg2": 16.8
+  },
+  {
+    "id": 126,
+    "code": "CF",
+    "name": "Central African Rep.",
+    "lastfmName": "Central African Rep.",
+    "lat": 7.013,
+    "lng": 21.753,
+    "pop": 4745185,
+    "areaDeg2": 50.6
+  },
+  {
+    "id": 127,
+    "code": "PS",
+    "name": "Palestine",
+    "lastfmName": "Palestine",
+    "lat": 32.128,
+    "lng": 35.259,
+    "pop": 4685306,
+    "areaDeg2": 0.6
+  },
+  {
+    "id": 128,
+    "code": "MR",
+    "name": "Mauritania",
+    "lastfmName": "Mauritania",
+    "lat": 19.424,
+    "lng": -9.743,
+    "pop": 4525696,
+    "areaDeg2": 89.6
+  },
+  {
+    "id": 129,
+    "code": "PA",
+    "name": "Panama",
+    "lastfmName": "Panama",
+    "lat": 8.341,
+    "lng": -80.909,
+    "pop": 4246439,
+    "areaDeg2": 6
+  },
+  {
+    "id": 130,
+    "code": "KW",
+    "name": "Kuwait",
+    "lastfmName": "Kuwait",
+    "lat": 29.644,
+    "lng": 47.397,
+    "pop": 4207083,
+    "areaDeg2": 1.5
+  },
+  {
+    "id": 131,
+    "code": "HR",
+    "name": "Croatia",
+    "lastfmName": "Croatia",
+    "lat": 45.817,
+    "lng": 16.482,
+    "pop": 4067500,
+    "areaDeg2": 5.9
+  },
+  {
+    "id": 132,
+    "code": "GE",
+    "name": "Georgia",
+    "lastfmName": "Georgia",
+    "lat": 42.372,
+    "lng": 42.436,
+    "pop": 3720382,
+    "areaDeg2": 7.6
+  },
+  {
+    "id": 133,
+    "code": "UY",
+    "name": "Uruguay",
+    "lastfmName": "Uruguay",
+    "lat": -32.932,
+    "lng": -56.031,
+    "pop": 3461734,
+    "areaDeg2": 17.1
+  },
+  {
+    "id": 134,
+    "code": "BA",
+    "name": "Bosnia and Herz.",
+    "lastfmName": "Bosnia and Herz.",
+    "lat": 44.098,
+    "lng": 18.081,
+    "pop": 3301000,
+    "areaDeg2": 5.8
+  },
+  {
+    "id": 135,
+    "code": "MN",
+    "name": "Mongolia",
+    "lastfmName": "Mongolia",
+    "lat": 46.04,
+    "lng": 104.763,
+    "pop": 3225167,
+    "areaDeg2": 184.6
+  },
+  {
+    "id": 136,
+    "code": "PR",
+    "name": "Puerto Rico",
+    "lastfmName": "Puerto Rico",
+    "lat": 18.233,
+    "lng": -66.407,
+    "pop": 3193694,
+    "areaDeg2": 0.7
+  }
+]
