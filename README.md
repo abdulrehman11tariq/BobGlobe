@@ -75,4 +75,35 @@ npm run dev
 npm run build
 ```
 
+---
+
+## 🎧 How the Data Works
+
+BobGlobe uses real, daily-updated charts from Apple Music combined with Deezer artist imagery:
+
+### 1. Daily Pipeline Workflow
+```bash
+# Fetch latest Apple Music charts, iTunes previews, and Deezer HD photos:
+node scripts/fetchData.mjs
+
+# Verify coverage, data invariants, and reachability:
+node scripts/verifyData.mjs
+
+# Run full placement and unit verification suite:
+npm test
+```
+
+### 2. Data Sources & Architecture
+- **Apple Music Country Charts**: Public RSS feeds (`https://rss.marketingtools.apple.com/api/v2/{cc}/music/most-played/100/songs.json`) querying the Top 100 most-played songs across 136 countries.
+- **iTunes Search / Lookup**: Fetches clean artist IDs, high-resolution album cover artwork, and 30-second audio previews.
+- **Deezer API**: Resolves high-resolution ($1000\times1000$) artist photography and Deezer profile links.
+- **Scoring & Sizing**:
+  $$\text{score} = \sum_{i} (101 - \text{rank}_i) \times (1.10 \text{ if rank}_i = 1 \text{ else } 1.0)$$
+  Blob radius dynamically balances local country dominance with global market volume:
+  $$r = \frac{\text{chartScore}}{\text{countryTopScore}}, \quad w = \left(\frac{\text{countryTopScore}}{\text{globalMaxTopScore}}\right)^{0.4}$$
+  $$t = \sqrt{r} \times (0.5 + 0.5 \times w)$$
+- **Explicit Content Safety**: Explicit songs (`explicit: true`) never autoplay. If an artist has no clean preview, BobGlobe stays silent and indicates *"No clean preview. Open on Apple Music"*.
+- **Nightly Automated Refresh**: Configured in `.github/workflows/refresh.yml`, running automatically every night at 03:00 UTC with snapshot diffing and 30-day history retention.
+
+
 Open [http://localhost:3000](http://localhost:3000) for the main globe or [http://localhost:3000/debug/blob](http://localhost:3000/debug/blob) for the QA Blob Studio.

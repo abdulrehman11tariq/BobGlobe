@@ -1,5 +1,5 @@
 import type { CountryEntry, BlobInstanceData, Artist } from '../types';
-import { BLOB_CONFIG } from '../theme/blobConfig';
+import { BLOB_CONFIG, AUDIO_CONFIG } from '../theme/blobConfig';
 import { MOCHI_CONFIG } from '../theme/mochiConfig';
 import { EARTH_CONFIG } from '../theme/earthConfig';
 import { latLngToVec3 } from './coordinates';
@@ -65,14 +65,25 @@ export function getUnplacedArtists(countryCode: string): Artist[] {
 }
 
 /**
- * Calculates blob radius according to listener count:
- * radius = minR + (maxR - minR) * sqrt(listeners / maxListeners)
+ * Calculates blob radius according to Phase 5 Part B sizing formula:
+ * r = chartScore / countryTopScore
+ * w = (countryTopScore / globalMaxTopScore)^0.4
+ * t = sqrt(r) * (1 - COUNTRY_WEIGHT_STRENGTH + COUNTRY_WEIGHT_STRENGTH * w) with COUNTRY_WEIGHT_STRENGTH = 0.5
+ * radius = (MIN_RADIUS + (MAX_RADIUS - MIN_RADIUS) * t) * BLOB_SIZE_BOOST
  */
-export function calculateBlobRadius(listeners: number, maxListeners: number): number {
-  const safeMax = Math.max(1, maxListeners);
-  const ratio = Math.max(0, Math.min(1, listeners / safeMax));
+export function calculateBlobRadius(
+  chartScore: number,
+  countryTopScore: number,
+  globalMaxTopScore: number = countryTopScore
+): number {
+  const safeCountryTop = Math.max(1, countryTopScore);
+  const safeGlobalMax = Math.max(1, globalMaxTopScore);
+  const r = Math.max(0, Math.min(1, chartScore / safeCountryTop));
+  const w = Math.pow(Math.max(0, Math.min(1, safeCountryTop / safeGlobalMax)), 0.4);
+  const cw = AUDIO_CONFIG.COUNTRY_WEIGHT_STRENGTH ?? 0.5;
+  const t = Math.sqrt(r) * (1 - cw + cw * w);
   const { MIN_RADIUS, MAX_RADIUS, BLOB_SIZE_BOOST } = BLOB_CONFIG;
-  return (MIN_RADIUS + (MAX_RADIUS - MIN_RADIUS) * Math.sqrt(ratio)) * BLOB_SIZE_BOOST;
+  return (MIN_RADIUS + (MAX_RADIUS - MIN_RADIUS) * t) * BLOB_SIZE_BOOST;
 }
 
 /**
@@ -89,8 +100,9 @@ export function getArtistColor(name: string): string {
 
 /**
  * Computes deterministic scattered blob layout for all countries in data.
- * Adheres strictly to Phase 3.5 rules:
+ * Adheres strictly to Phase 3.5 & Phase 5 rules:
  * - Deterministic, seeded by country code
+ * - Strictly sorted by in-country chartScore ranking
  * - Rank 1 gets point with largest clearanceDeg
  * - Ranks 2-5 get remaining points in seeded shuffle
  * - Footprint 17-point check: center + 8 outer + 8 inner all inside own country
@@ -100,7 +112,7 @@ export function getArtistColor(name: string): string {
  */
 export function computeGlobalBlobLayout(
   countries: CountryEntry[],
-  maxListeners: number
+  _legacyMaxListeners?: number
 ): BlobInstanceData[] {
   unplacedArtistsMap.clear();
   const allPlaced: BlobInstanceData[] = [];
@@ -119,10 +131,35 @@ export function computeGlobalBlobLayout(
 
   const countryPointsRecord = countryPointsData as Record<string, CandidatePoint[]>;
 
+  // Precompute countryTopScores and globalMaxTopScore across all countries
+  const countryTopScores = new Map<string, number>();
+  let globalMaxTopScore = 1;
+
+  for (const country of countries) {
+    let topScore = 0;
+    for (const a of country.artists || []) {
+      const score = a.chartScore ?? a.listeners ?? 0;
+      if (score > topScore) topScore = score;
+    }
+    topScore = Math.max(1, topScore);
+    countryTopScores.set(country.code, topScore);
+    if (topScore > globalMaxTopScore) {
+      globalMaxTopScore = topScore;
+    }
+  }
+
   for (const country of countries) {
     const countryId = countryIdMap.get(country.code) ?? 0;
     const rawPoints = countryPointsRecord[country.code] || [];
-    const artists = (country.artists || []).slice(0, 5);
+    
+    // Sort artists strictly by chartScore descending (falling back to listeners for legacy data)
+    const sortedArtists = [...(country.artists || [])].sort((a, b) => {
+      const scoreA = a.chartScore ?? a.listeners ?? 0;
+      const scoreB = b.chartScore ?? b.listeners ?? 0;
+      return scoreB - scoreA;
+    });
+    // Countries with fewer than 5 artists have fewer blobs
+    const artists = sortedArtists.slice(0, 5);
 
     if (artists.length === 0 || rawPoints.length === 0 || countryId === 0) {
       if (artists.length > 0) {
@@ -132,8 +169,11 @@ export function computeGlobalBlobLayout(
       continue;
     }
 
+    const countryTopScore = countryTopScores.get(country.code) || 1;
     const rng = new SeededRandom(stringToSeed(country.code));
-    const baseRadii = artists.map((a) => calculateBlobRadius(a.listeners, maxListeners));
+    const baseRadii = artists.map((a) =>
+      calculateBlobRadius(a.chartScore ?? a.listeners ?? 0, countryTopScore, globalMaxTopScore)
+    );
 
     // 1. Organize Candidate Points:
     // Rank 1 gets the point with largest clearanceDeg
@@ -411,7 +451,7 @@ export function computeGlobalBlobLayout(
  */
 export function generateCountryBlobs(
   country: CountryEntry,
-  maxListeners: number
+  maxListeners?: number
 ): BlobInstanceData[] {
   return computeGlobalBlobLayout([country], maxListeners);
 }

@@ -7,8 +7,9 @@ export const BLOB_CONFIG = {
   GLOBAL_SIZE_SCALE: 2.0,     // Alias for BLOB_SIZE_BOOST
 
   // Sizing parameters (base values prior to BLOB_SIZE_BOOST)
-  MIN_RADIUS: 0.038,       // Minimum blob radius for lowest listeners (~1.5% of planet radius)
+  MIN_RADIUS: 0.038,       // Minimum blob radius (~1.5% of planet radius)
   MAX_RADIUS: 0.105,       // Maximum blob radius for #1 global artist (~4.2% of planet radius)
+  COUNTRY_WEIGHT_STRENGTH: 0.5, // 0.5 weight balancing in-country dominance vs global market power
 
   // Placement & Spacing
   RING_SPACING_FACTOR: 1.35,  // Multiplier on (r1 + r2) to ensure clean air gap between blobs
@@ -57,5 +58,18 @@ export const BORDER_OUTLINE_CONFIG = {
   CACHE_MAX_COUNTRIES: 8,      // Maximum pre-built country borders cached
 } as const;
 
+/**
+ * Audio Engine Tuning Constants (Part B)
+ */
+export const AUDIO_CONFIG = {
+  HOVER_DELAY_MS: 350,         // 350ms rest before audio begins fading in
+  FADE_IN_MS: 300,            // ~300ms fade in duration
+  FADE_OUT_MS: 250,           // ~250ms fade out duration
+  DEFAULT_VOLUME: 0.6,        // Default volume (0.0 to 1.0)
+  BEAT_BPM: 100,              // Fixed 100 BPM beat clock for dance & equalizer
+  COUNTRY_WEIGHT_STRENGTH: 0.5, // Equal weight to local rank vs global market score
+} as const;
+
 export type BlobConfig = typeof BLOB_CONFIG;
 export type BorderOutlineConfig = typeof BORDER_OUTLINE_CONFIG;
+export type AudioConfig = typeof AUDIO_CONFIG;

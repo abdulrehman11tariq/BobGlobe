@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { easing } from 'maath';
 import type { BlobInstanceData } from '../../types';
 import { MOCHI_CONFIG } from '../../theme/mochiConfig';
+import { AUDIO_CONFIG } from '../../theme/blobConfig';
 import { getFaceTexture, type BlobExpression, type CheekMark } from './FaceTextures';
 import { Accessory, type AccessoryType } from './Accessories';
 import { createMochiGeometry, createFaceShellGeometry } from './MochiGeometry';
@@ -12,6 +13,9 @@ interface MochiBlobProps {
   blob: BlobInstanceData;
   isSelected: boolean;
   isHovered: boolean;
+  isPlaying?: boolean;
+  isSameCountryHovered?: boolean;
+  trendAvailable?: boolean;
   onSelect: () => void;
   onHoverStart: () => void;
   onHoverEnd: () => void;
@@ -23,6 +27,11 @@ const sharedFaceShellGeom = createFaceShellGeometry();
 const sharedShadowGeom = new THREE.CircleGeometry(0.85, 16);
 const sharedBellyGeom = new THREE.CircleGeometry(0.55, 20);
 const sharedHighlightGeom = new THREE.CircleGeometry(0.24, 16);
+
+// Shared solid music note components (100% opaque, zero transparency)
+const sharedNoteHeadGeom = new THREE.SphereGeometry(0.12, 10, 8);
+const sharedNoteStemGeom = new THREE.CylinderGeometry(0.02, 0.02, 0.35, 6);
+const sharedNoteFlagGeom = new THREE.BoxGeometry(0.14, 0.05, 0.03);
 
 /**
  * Deterministically pick accessory and cheek mark from artist id
@@ -61,6 +70,9 @@ export const MochiBlob: FC<MochiBlobProps> = ({
   blob,
   isSelected,
   isHovered,
+  isPlaying = false,
+  isSameCountryHovered = false,
+  trendAvailable = false,
   onSelect,
   onHoverStart,
   onHoverEnd,
@@ -69,6 +81,8 @@ export const MochiBlob: FC<MochiBlobProps> = ({
   const bodyGroupRef = useRef<THREE.Group>(null);
   const faceGroupRef = useRef<THREE.Group>(null);
   const faceMeshRef = useRef<THREE.Mesh>(null);
+  const note1Ref = useRef<THREE.Group>(null);
+  const note2Ref = useRef<THREE.Group>(null);
 
   const { camera } = useThree();
 
@@ -89,21 +103,34 @@ export const MochiBlob: FC<MochiBlobProps> = ({
   const { accessory, cheekMark } = useMemo(() => getBlobPersonality(blob), [blob]);
 
   // Determine current active facial expression
+  // When isPlaying, uses happy expression; when !trendAvailable, uses neutral idle
   const currentExpression: BlobExpression = useMemo(() => {
     if (isBlinking) return 'blink';
+    if (isPlaying) return 'hover'; // Happy singing/dancing expression
     if (isSelected) return 'selected';
     if (isHovered) return 'hover';
-    if (blob.artist.trend === 'up') return 'trend_up';
-    if (blob.artist.trend === 'down') return 'trend_down';
-    if (blob.artist.trend === 'new') return 'trend_new';
-    return 'idle';
-  }, [isBlinking, isSelected, isHovered, blob.artist.trend]);
+    if (trendAvailable) {
+      if (blob.artist.trend === 'up') return 'trend_up';
+      if (blob.artist.trend === 'down') return 'trend_down';
+      if (blob.artist.trend === 'new') return 'trend_new';
+    }
+    return 'idle'; // Neutral expression while trendAvailable is false
+  }, [isBlinking, isPlaying, isSelected, isHovered, trendAvailable, blob.artist.trend]);
 
   // Get shared CanvasTexture for this expression with subtle look shift
   const faceTexture = useMemo(
     () => getFaceTexture(currentExpression, cheekMark, lookShift.current.x, lookShift.current.y),
     [currentExpression, cheekMark]
   );
+
+  // Solid Music Note Material (100% opaque, zero transparency)
+  const noteMaterial = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      color: new THREE.Color('#fbbf24'),
+      transparent: false,
+      depthWrite: true,
+    });
+  }, []);
 
   // Body material: Soft pastel tone with subsurface finish
   const bodyMaterial = useMemo(() => {
@@ -237,9 +264,59 @@ export const MochiBlob: FC<MochiBlobProps> = ({
     const baseR = currentRadius.current;
     const scaleY = baseR * breatheY * boingScale.current.y;
     const scaleXZ = baseR * breatheXZ * boingScale.current.xz;
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Dance & Hop Feedback:
+    // When isPlaying, bounces on 100 BPM beat; same-country blobs do a small hop on hover
+    let danceHopY = 0;
+    if (isPlaying && !prefersReducedMotion) {
+      const beatPeriod = 60 / AUDIO_CONFIG.BEAT_BPM; // 0.600s
+      const beatProgress = (t % beatPeriod) / beatPeriod;
+      danceHopY = Math.sin(beatProgress * Math.PI) * 0.18 * baseR;
+    } else if (isSameCountryHovered && !isHovered && !isSelected && !prefersReducedMotion) {
+      danceHopY = Math.max(0, Math.sin(t * 8)) * 0.08 * baseR;
+    }
+
     if (bodyGroupRef.current) {
-      bodyGroupRef.current.position.set(0, 0.4992 * scaleY, 0);
+      bodyGroupRef.current.position.set(0, 0.4992 * scaleY + danceHopY, 0);
       bodyGroupRef.current.scale.set(scaleXZ, scaleY, scaleXZ);
+    }
+
+    // Solid Music Notes floating up & shrinking away when playing
+    if (note1Ref.current && note2Ref.current) {
+      if (isPlaying && !prefersReducedMotion) {
+        note1Ref.current.visible = true;
+        note2Ref.current.visible = true;
+
+        const p1 = (t * 0.85) % 1;
+        const p2 = (t * 0.85 + 0.5) % 1;
+
+        // Shrinking away as they rise
+        const s1 = (1 - p1) * baseR * 0.45;
+        const s2 = (1 - p2) * baseR * 0.45;
+
+        note1Ref.current.scale.set(s1, s1, s1);
+        note1Ref.current.position.set(
+          baseR * 0.35 + Math.sin(p1 * Math.PI * 2) * 0.12 * baseR,
+          scaleY * 1.1 + p1 * baseR * 1.3,
+          Math.cos(p1 * Math.PI * 2) * 0.12 * baseR
+        );
+        note1Ref.current.rotation.z = Math.sin(p1 * 4) * 0.25;
+
+        note2Ref.current.scale.set(s2, s2, s2);
+        note2Ref.current.position.set(
+          -baseR * 0.35 - Math.sin(p2 * Math.PI * 2) * 0.12 * baseR,
+          scaleY * 1.1 + p2 * baseR * 1.3,
+          Math.cos(p2 * Math.PI * 2) * 0.12 * baseR
+        );
+        note2Ref.current.rotation.z = -Math.sin(p2 * 4) * 0.25;
+      } else {
+        note1Ref.current.visible = false;
+        note2Ref.current.visible = false;
+      }
     }
 
     // 5. Billboard-ish Head/Face rotation: turns towards camera around up-axis (limited to ~70 deg)
@@ -353,6 +430,19 @@ export const MochiBlob: FC<MochiBlobProps> = ({
 
         {/* Personality Accessory on Head */}
         <Accessory type={accessory} headY={MOCHI_CONFIG.BODY_HEIGHT * 0.9} />
+      </group>
+
+      {/* Floating Solid Music Notes (100% Opaque, Zero Transparency) */}
+      <group ref={note1Ref} visible={false}>
+        <mesh geometry={sharedNoteHeadGeom} material={noteMaterial} position={[0, -0.12, 0]} rotation={[0, 0, 0.4]} />
+        <mesh geometry={sharedNoteStemGeom} material={noteMaterial} position={[0.08, 0.05, 0]} />
+        <mesh geometry={sharedNoteFlagGeom} material={noteMaterial} position={[0.13, 0.18, 0]} />
+      </group>
+
+      <group ref={note2Ref} visible={false}>
+        <mesh geometry={sharedNoteHeadGeom} material={noteMaterial} position={[0, -0.12, 0]} rotation={[0, 0, 0.4]} />
+        <mesh geometry={sharedNoteStemGeom} material={noteMaterial} position={[0.08, 0.05, 0]} />
+        <mesh geometry={sharedNoteFlagGeom} material={noteMaterial} position={[0.13, 0.18, 0]} />
       </group>
     </group>
   );

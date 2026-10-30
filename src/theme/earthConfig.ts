@@ -1,3 +1,5 @@
+import { assetUrl } from '../utils/assetUrl';
+
 /**
  * Earth & Map Configuration
  * Texture: world_map_4096.png (Equirectangular, -180 to 180 left to right, 90 to -90 top to bottom)
@@ -50,12 +52,10 @@ export const EARTH_CONFIG = {
 
   // Textures
   textures: {
-    worldMap: '/textures/world_map_4096.png',
-    worldMapLow: '/textures/world_map_2048.png',
-    landMask: '/textures/land_mask_4096.png',
-    mask: '/textures/land_mask_4096.png',
-    topology: '/textures/earth_topology.png',
+    worldMap: assetUrl('textures/world_map_4096.png'),
+    worldMapLow: assetUrl('textures/world_map_2048.png'),
+    landMask: assetUrl('textures/land_mask_4096.png'),
+    mask: assetUrl('textures/land_mask_4096.png'),
+    topology: assetUrl('textures/earth_topology.png'),
   },
 } as const;
-
-export type EarthConfig = typeof EARTH_CONFIG;

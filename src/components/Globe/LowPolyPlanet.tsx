@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GLOBE_CONFIG } from '../../theme/constants';
 import { PALETTE } from '../../theme/palette';
 import { vector3ToLatLng } from '../../utils/coordinates';
+import { assetUrl } from '../../utils/assetUrl';
 import {
   initLandOceanMask,
   getBiomeInfo,
@@ -14,7 +15,7 @@ export const LowPolyPlanet: FC = () => {
   const waterRef = useRef<THREE.Mesh>(null);
 
   // 1. Load the earth specular mask
-  const specularTexture = useLoader(THREE.TextureLoader, '/textures/earth_specular.jpg');
+  const specularTexture = useLoader(THREE.TextureLoader, assetUrl('textures/earth_specular.jpg'));
 
   // 2. Generate the low-poly terrain mesh with flat shading and vertex colors
   const terrainGeometry = useMemo(() => {

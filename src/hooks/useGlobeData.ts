@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { DataFile } from '../types';
+import type { DataFile, GlobalTopArtist } from '../types';
+import { assetUrl } from '../utils/assetUrl';
 
 interface UseGlobeDataResult {
   data: DataFile | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
-  maxListeners: number;
+  maxListeners: number; // For backward compatibility
   totalBlobs: number;
+  trendAvailable: boolean;
+  updatedAt: string | null;
+  globalTop: GlobalTopArtist[];
 }
 
 export function useGlobeData(): UseGlobeDataResult {
@@ -19,16 +23,24 @@ export function useGlobeData(): UseGlobeDataResult {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/data/latest.json');
+      // Cache-busting rounded to the current hour
+      const hourStamp = Math.floor(Date.now() / (1000 * 60 * 60));
+      const url = `${assetUrl('data/latest.json')}?v=${hourStamp}`;
+
+      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`Failed to load globe data: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
       }
       const json: DataFile = await response.json();
+      if (!json || !Array.isArray(json.countries)) {
+        throw new Error('Invalid data format in latest.json');
+      }
       setData(json);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error loading data';
+      console.warn(`[useGlobeData] Fetch error: ${msg}`);
       setError(msg);
-      console.error('Error fetching globe data:', err);
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -38,7 +50,7 @@ export function useGlobeData(): UseGlobeDataResult {
     fetchData();
   }, [fetchData]);
 
-  // Compute global max listeners and total blob count
+  // Compute stats and totals
   const { maxListeners, totalBlobs } = useMemo(() => {
     if (!data || !data.countries) {
       return { maxListeners: 1, totalBlobs: 0 };
@@ -48,10 +60,11 @@ export function useGlobeData(): UseGlobeDataResult {
     let count = 0;
 
     for (const c of data.countries) {
-      for (const a of c.artists) {
+      for (const a of c.artists || []) {
         count++;
-        if (a.listeners > max) {
-          max = a.listeners;
+        const score = a.chartScore ?? a.listeners ?? 0;
+        if (score > max) {
+          max = score;
         }
       }
     }
@@ -66,5 +79,8 @@ export function useGlobeData(): UseGlobeDataResult {
     refetch: fetchData,
     maxListeners,
     totalBlobs,
+    trendAvailable: Boolean(data?.trendAvailable),
+    updatedAt: data?.updatedAt || null,
+    globalTop: data?.globalTop || [],
   };
 }

@@ -7,6 +7,8 @@ import { EARTH_CONFIG } from '../theme/earthConfig';
  * 0 = Water / unassigned
  */
 
+import { assetUrl } from './assetUrl';
+
 let idData: Uint8ClampedArray | null = null;
 let idWidth = 0;
 let idHeight = 0;
@@ -25,7 +27,7 @@ export function setCountryIdData(data: Uint8ClampedArray, width: number, height:
 /**
  * Loads the country ID map into an offscreen canvas and extracts pixel buffer
  */
-export function loadCountryIdMask(url = '/textures/country_id_4096.png'): Promise<void> {
+export function loadCountryIdMask(url = assetUrl('textures/country_id_4096.png')): Promise<void> {
   if (idData) return Promise.resolve();
   if (loadPromise) return loadPromise;
 

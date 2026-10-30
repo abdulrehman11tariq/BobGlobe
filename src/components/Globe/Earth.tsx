@@ -2,6 +2,7 @@ import { useRef, type FC } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Atmosphere } from './Atmosphere';
+import { assetUrl } from '../../utils/assetUrl';
 
 interface EarthProps {
   radius?: number;
@@ -13,10 +14,10 @@ export const Earth: FC<EarthProps> = ({ radius = 2.5 }) => {
 
   // Load NASA Blue Marble textures
   const [dayMap, normalMap, specularMap, cloudsMap] = useLoader(THREE.TextureLoader, [
-    '/textures/earth_day.jpg',
-    '/textures/earth_normal.jpg',
-    '/textures/earth_specular.jpg',
-    '/textures/earth_clouds.png',
+    assetUrl('textures/earth_day.jpg'),
+    assetUrl('textures/earth_normal.jpg'),
+    assetUrl('textures/earth_specular.jpg'),
+    assetUrl('textures/earth_clouds.png'),
   ]);
 
   // Configure texture color spaces and filtering

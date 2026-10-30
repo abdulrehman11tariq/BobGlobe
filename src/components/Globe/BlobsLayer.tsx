@@ -6,6 +6,8 @@ import { MochiBlob } from '../Blob/MochiBlob';
 interface BlobsLayerProps {
   blobs: BlobInstanceData[];
   selectedBlob: BlobInstanceData | null;
+  playingBlobId?: string | null;
+  trendAvailable?: boolean;
   onSelectBlob: (blob: BlobInstanceData) => void;
   onHoverBlob: (blob: BlobInstanceData | null) => void;
   debug?: boolean;
@@ -14,11 +16,18 @@ interface BlobsLayerProps {
 export const BlobsLayer: FC<BlobsLayerProps> = ({
   blobs,
   selectedBlob,
+  playingBlobId = null,
+  trendAvailable = false,
   onSelectBlob,
   onHoverBlob,
   debug = false,
 }) => {
   const [hoveredBlobId, setHoveredBlobId] = useState<string | null>(null);
+
+  const hoveredCountryCode = useMemo(() => {
+    if (!hoveredBlobId) return null;
+    return blobs.find((b) => b.id === hoveredBlobId)?.country.code || null;
+  }, [blobs, hoveredBlobId]);
 
   // Debug Spacing Rings Geometry
   const debugRings = useMemo(() => {
@@ -56,7 +65,6 @@ export const BlobsLayer: FC<BlobsLayerProps> = ({
   return (
     <group name="mochi-blobs-layer">
       {/* Dedicated Soft Bright Lighting specifically for Mochi Blobs */}
-      {/* Ensures blobs are bright and never turned pitch black on the planet's dark hemisphere */}
       <ambientLight intensity={0.9} color="#ffffff" />
       <hemisphereLight
         args={['#ffffff', '#ffedf5', 1.2]}
@@ -73,6 +81,13 @@ export const BlobsLayer: FC<BlobsLayerProps> = ({
           blob={blob}
           isSelected={selectedBlob?.id === blob.id}
           isHovered={hoveredBlobId === blob.id}
+          isPlaying={playingBlobId === blob.id}
+          isSameCountryHovered={Boolean(
+            hoveredCountryCode &&
+            hoveredCountryCode === blob.country.code &&
+            hoveredBlobId !== blob.id
+          )}
+          trendAvailable={trendAvailable}
           onSelect={() => onSelectBlob(blob)}
           onHoverStart={() => {
             setHoveredBlobId(blob.id);
