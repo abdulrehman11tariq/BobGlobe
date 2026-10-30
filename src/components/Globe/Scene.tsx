@@ -95,8 +95,8 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
               radius={EARTH_CONFIG.PLANET_RADIUS}
             />
 
-            {/* Debug Country Coordinate Markers (Toggled with 'M' key) */}
-            <CountryMarkers visible={showMarkers} />
+            {/* Debug Country Candidate Markers & Footprints (Toggled with 'M' key) */}
+            <CountryMarkers visible={showMarkers} blobs={blobs} />
 
             {/* Kawaii Mochi Blobs (Star of the show!) */}
             <BlobsLayer

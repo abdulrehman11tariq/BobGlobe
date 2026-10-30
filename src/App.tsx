@@ -8,8 +8,9 @@ import { ArtistPanel } from './components/UI/ArtistPanel';
 import { DebugOverlay } from './components/UI/DebugOverlay';
 import { BlobDebugPage } from './pages/BlobDebugPage';
 import { useGlobeData } from './hooks/useGlobeData';
-import { generateCountryBlobs } from './utils/blobPlacement';
+import { computeGlobalBlobLayout } from './utils/blobPlacement';
 import { loadLandMask, isLandMaskReady } from './utils/terrainSampler';
+import { loadCountryIdMask, isCountryIdMaskReady } from './utils/countryIdSampler';
 import { runLandmarkStartupCheck } from './utils/landmarkCheck';
 import type { ControlsHandle } from './components/Globe/Controls';
 import type { BlobInstanceData } from './types';
@@ -22,11 +23,15 @@ export function App() {
   const [hoveredBlob, setHoveredBlob] = useState<BlobInstanceData | null>(null);
   const [debug, setDebug] = useState<boolean>(false);
   const [showMarkers, setShowMarkers] = useState<boolean>(false);
-  const [maskReady, setMaskReady] = useState<boolean>(isLandMaskReady());
+  const [masksReady, setMasksReady] = useState<boolean>(
+    isLandMaskReady() && isCountryIdMaskReady()
+  );
   
-  // Preload land mask texture for pixel-level sampling
+  // Preload land mask & country ID mask textures for CPU lookups
   useEffect(() => {
-    loadLandMask().then(() => setMaskReady(true));
+    Promise.all([loadLandMask(), loadCountryIdMask()]).then(() => {
+      setMasksReady(true);
+    });
   }, []);
 
   // Check if initial route is /debug/blob
@@ -40,17 +45,11 @@ export function App() {
   // 1. Load Seed Data from /data/latest.json
   const { data, error, maxListeners } = useGlobeData();
 
-  // 2. Compute non-overlapping blob placements on the terrain surface
+  // 2. Compute non-overlapping scattered blob placements inside own country
   const allBlobs = useMemo(() => {
-    if (!data || !data.countries || !maskReady) return [];
-
-    const list: BlobInstanceData[] = [];
-    for (const country of data.countries) {
-      const countryBlobs = generateCountryBlobs(country, maxListeners);
-      list.push(...countryBlobs);
-    }
-    return list;
-  }, [data, maskReady, maxListeners]);
+    if (!data || !data.countries || !masksReady) return [];
+    return computeGlobalBlobLayout(data.countries, maxListeners);
+  }, [data, masksReady, maxListeners]);
 
   // 3. Dev-only startup check: verify all blobs on land & landmark continents
   useEffect(() => {

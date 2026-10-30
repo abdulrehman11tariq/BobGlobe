@@ -217,6 +217,12 @@ export const MochiBlob: FC<MochiBlobProps> = ({
     const targetR = blob.targetRadius * hoverBump;
     easing.damp(currentRadius, 'current', targetR, 0.18, delta);
 
+    // Smoothly ease position and orientation when rankings refresh (~0.8s spring transition)
+    if (rootGroupRef.current) {
+      easing.damp3(rootGroupRef.current.position, blob.position, 0.25, delta);
+      easing.dampQ(rootGroupRef.current.quaternion, alignQuaternion, 0.25, delta);
+    }
+
     // 3. Damped boing spring recovery back to 1.0
     easing.damp(boingScale.current, 'y', 1.0, MOCHI_CONFIG.SPRING_DAMPING, delta);
     easing.damp(boingScale.current, 'xz', 1.0, MOCHI_CONFIG.SPRING_DAMPING, delta);

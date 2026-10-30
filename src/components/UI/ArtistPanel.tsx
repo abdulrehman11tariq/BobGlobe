@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import type { BlobInstanceData } from '../../types';
-import { X, TrendingUp, TrendingDown, Minus, Sparkles, Music, ExternalLink } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Minus, Sparkles, Music, ExternalLink, Users } from 'lucide-react';
+import { getUnplacedArtists } from '../../utils/blobPlacement';
 
 interface ArtistPanelProps {
   blob: BlobInstanceData | null;
@@ -121,6 +122,38 @@ export const ArtistPanel: FC<ArtistPanelProps> = ({ blob, onClose }) => {
             )}
           </div>
         </div>
+
+        {/* Unplaced / Hidden artists for this country (+N more) */}
+        {(() => {
+          const hidden = getUnplacedArtists(country.code);
+          if (hidden.length === 0) return null;
+          return (
+            <div className="bg-slate-900/70 p-3 rounded-2xl border border-white/10 flex flex-col gap-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-400">
+                <Users className="w-3.5 h-3.5" />
+                <span>+{hidden.length} more in {country.name}</span>
+              </div>
+              <div className="flex flex-col gap-1 text-xs">
+                {hidden.map((h) => {
+                  const r = country.artists.findIndex((a) => a.id === h.id) + 1;
+                  return (
+                    <div
+                      key={h.id}
+                      className="flex items-center justify-between py-1 px-2 rounded-lg bg-slate-800/60 border border-white/5"
+                    >
+                      <span className="font-semibold text-slate-200 truncate">
+                        #{r} {h.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono font-bold">
+                        {h.listeners.toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Deezer Link */}
         {artist.deezerUrl && (

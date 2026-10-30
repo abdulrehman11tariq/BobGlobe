@@ -11,6 +11,12 @@ export const BLOB_CONFIG = {
   MIN_RING_RADIUS: 0.12,      // Minimum distance of peripheral blobs from center
   ISLAND_SNAP_RADIUS: 4.5,    // Degree radius to search for solid land for island countries
 
+  // Phase 3.5 Scatter Constants
+  GAP: 0.010,                 // Minimum world clearance gap between blob boundaries (dist > rA + rB + GAP)
+  SHRINK_FLOOR: 0.28,         // Maximum shrink limit for narrow/island nations (preserves visibility & kawaii details)
+  JITTER_MAX_FACTOR: 0.15,    // Subtle organic jitter (up to 15% of blob radius, only if footprint passes)
+  GLOBAL_SIZE_SCALE: 1.0,     // Constant global sizeScale
+
   // Spring animation
   SPRING_TENSION: 180,
   SPRING_FRICTION: 18,
