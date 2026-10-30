@@ -12,6 +12,7 @@ import { computeGlobalBlobLayout } from './utils/blobPlacement';
 import { loadLandMask, isLandMaskReady } from './utils/terrainSampler';
 import { loadCountryIdMask, isCountryIdMaskReady } from './utils/countryIdSampler';
 import { runLandmarkStartupCheck } from './utils/landmarkCheck';
+import { BORDER_OUTLINE_CONFIG } from './theme/blobConfig';
 import type { ControlsHandle } from './components/Globe/Controls';
 import type { BlobInstanceData } from './types';
 
@@ -21,6 +22,7 @@ export function App() {
   const [isInteracting, setIsInteracting] = useState<boolean>(false);
   const [selectedBlob, setSelectedBlob] = useState<BlobInstanceData | null>(null);
   const [hoveredBlob, setHoveredBlob] = useState<BlobInstanceData | null>(null);
+  const [activeOutlineCountry, setActiveOutlineCountry] = useState<string | null>(null);
   const [debug, setDebug] = useState<boolean>(false);
   const [showMarkers, setShowMarkers] = useState<boolean>(false);
   const [masksReady, setMasksReady] = useState<boolean>(
@@ -33,6 +35,28 @@ export function App() {
       setMasksReady(true);
     });
   }, []);
+
+  // Country Outline on Hover & Selection Manager:
+  // - Show outline of hovered blob's country immediately
+  // - Moving between blobs in same country keeps outline steady with no flicker
+  // - Hide 100ms after pointer leaves blobs (or revert to selected blob's country)
+  // - Pause outline changes while dragging the globe
+  useEffect(() => {
+    if (isInteracting) return;
+
+    if (hoveredBlob) {
+      setActiveOutlineCountry(hoveredBlob.country.code);
+    } else {
+      const timer = setTimeout(() => {
+        if (selectedBlob) {
+          setActiveOutlineCountry(selectedBlob.country.code);
+        } else {
+          setActiveOutlineCountry(null);
+        }
+      }, BORDER_OUTLINE_CONFIG.LEAVE_DELAY_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [hoveredBlob, selectedBlob, isInteracting]);
 
   // Check if initial route is /debug/blob
   const [isDebugBlobStudio, setIsDebugBlobStudio] = useState<boolean>(() => {
@@ -165,6 +189,7 @@ export function App() {
         selectedBlob={selectedBlob}
         onSelectBlob={setSelectedBlob}
         onHoverBlob={setHoveredBlob}
+        activeOutlineCountry={activeOutlineCountry}
         debug={debug}
         showMarkers={showMarkers}
         onInteractionStart={handleInteractionStart}

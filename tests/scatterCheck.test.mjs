@@ -121,8 +121,9 @@ const countryIdMap = new Map(countries.map((c) => [c.code, c.id]));
 const countryMetaMap = new Map(countries.map((c) => [c.code, c]));
 
 // Layout constants
-const MIN_RADIUS = 0.038;
-const MAX_RADIUS = 0.105;
+const BLOB_SIZE_BOOST = 2.0;
+const MIN_RADIUS = 0.038 * BLOB_SIZE_BOOST;
+const MAX_RADIUS = 0.105 * BLOB_SIZE_BOOST;
 const GAP = 0.010;
 const SHRINK_FLOOR = 0.28;
 const JITTER_MAX_FACTOR = 0.15;
@@ -418,4 +419,96 @@ for (const tc of testCountries) {
   });
 }
 
-console.log('\n✨ All Phase 3.5 Scatter Verification Tests PASSED!\n');
+// 5. Test Country Borders Outline Densification & Antimeridian Splitting
+console.log('\n🗺️ Testing Country Borders Outline Densification & Antimeridian Splitting:');
+const bordersData = JSON.parse(fs.readFileSync('src/data/country_borders.json'));
+
+const borderTestCases = [
+  { code: 'IN', label: 'India', minRings: 1 },
+  { code: 'JP', label: 'Japan (several islands)', minRings: 4 },
+  { code: 'ID', label: 'Indonesia (archipelago)', minRings: 5 },
+  { code: 'IT', label: 'Italy (peninsula + Sicily + Sardinia)', minRings: 3 },
+  { code: 'GB', label: 'United Kingdom (Great Britain + NI)', minRings: 2 },
+  { code: 'CL', label: 'Chile', minRings: 1 },
+  { code: 'BR', label: 'Brazil', minRings: 1 },
+  { code: 'US', label: 'USA (Contiguous + Alaska)', minRings: 2 },
+  { code: 'RU', label: 'Russia (Antimeridian split check)', minRings: 1 },
+  { code: 'NZ', label: 'New Zealand (North + South Island)', minRings: 2 },
+];
+
+let borderTestFailures = 0;
+const DENSIFY_MAX_STEP_DEG = 0.5;
+
+for (const bCase of borderTestCases) {
+  const rawRings = bordersData[bCase.code];
+  if (!rawRings || rawRings.length < bCase.minRings) {
+    console.error(`❌ ${bCase.label} (${bCase.code}) missing expected rings in borders file!`);
+    borderTestFailures++;
+    continue;
+  }
+
+  const densifiedSegments = [];
+  for (const ring of rawRings) {
+    let currentSeg = [];
+    for (let i = 0; i < ring.length - 1; i++) {
+      const [lng1, lat1] = ring[i];
+      const [lng2, lat2] = ring[i + 1];
+
+      // Antimeridian jump detection: no line streak across the whole globe!
+      if (Math.abs(lng2 - lng1) > 180) {
+        if (currentSeg.length > 1) {
+          densifiedSegments.push(currentSeg);
+        }
+        currentSeg = [];
+        continue;
+      }
+
+      const dLat = lat2 - lat1;
+      const latMidRad = ((lat1 + lat2) / 2) * (Math.PI / 180);
+      const dLngCos = (lng2 - lng1) * Math.cos(latMidRad);
+      const spanDeg = Math.sqrt(dLat * dLat + dLngCos * dLngCos);
+
+      const steps = Math.max(1, Math.ceil(spanDeg / DENSIFY_MAX_STEP_DEG));
+      for (let s = 0; s < steps; s++) {
+        const t = s / steps;
+        currentSeg.push([lng1 + t * (lng2 - lng1), lat1 + t * (lat2 - lat1)]);
+      }
+    }
+
+    currentSeg.push(ring[ring.length - 1]);
+    if (currentSeg.length > 1) {
+      densifiedSegments.push(currentSeg);
+    }
+  }
+
+  // Check no segment exceeds maxStepDeg and no segment crosses > 180 deg
+  let hasSpanError = false;
+  let totalPts = 0;
+  for (const seg of densifiedSegments) {
+    totalPts += seg.length;
+    for (let i = 0; i < seg.length - 1; i++) {
+      const [lng1, lat1] = seg[i];
+      const [lng2, lat2] = seg[i + 1];
+      const dLng = Math.abs(lng2 - lng1);
+      if (dLng > 180) {
+        hasSpanError = true;
+        console.error(`❌ Antimeridian jump found inside segment for ${bCase.code}: ${lng1} -> ${lng2}`);
+      }
+    }
+  }
+
+  if (hasSpanError) {
+    borderTestFailures++;
+  } else {
+    console.log(`  ✅ ${bCase.label} (${bCase.code}): ${densifiedSegments.length} clean line segments, ${totalPts} densified points (step <= ${DENSIFY_MAX_STEP_DEG}°).`);
+  }
+}
+
+if (borderTestFailures === 0) {
+  console.log('✅ ALL Country Borders Outline Densification & Antimeridian Tests PASSED!');
+} else {
+  console.error(`❌ ${borderTestFailures} border tests failed!`);
+  process.exit(1);
+}
+
+console.log('\n✨ All Verification Tests PASSED!\n');

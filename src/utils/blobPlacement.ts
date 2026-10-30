@@ -71,8 +71,8 @@ export function getUnplacedArtists(countryCode: string): Artist[] {
 export function calculateBlobRadius(listeners: number, maxListeners: number): number {
   const safeMax = Math.max(1, maxListeners);
   const ratio = Math.max(0, Math.min(1, listeners / safeMax));
-  const { MIN_RADIUS, MAX_RADIUS } = BLOB_CONFIG;
-  return MIN_RADIUS + (MAX_RADIUS - MIN_RADIUS) * Math.sqrt(ratio);
+  const { MIN_RADIUS, MAX_RADIUS, BLOB_SIZE_BOOST } = BLOB_CONFIG;
+  return (MIN_RADIUS + (MAX_RADIUS - MIN_RADIUS) * Math.sqrt(ratio)) * BLOB_SIZE_BOOST;
 }
 
 /**

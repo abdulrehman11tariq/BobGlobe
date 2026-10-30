@@ -6,6 +6,7 @@ import { CozySpaceBackdrop } from './CozySpaceBackdrop';
 import { BlobsLayer } from './BlobsLayer';
 import { CameraController } from './CameraController';
 import { CountryMarkers } from './CountryMarkers';
+import { CountryOutline } from './CountryOutline';
 import { Controls, type ControlsHandle } from './Controls';
 import type { BlobInstanceData } from '../../types';
 
@@ -15,6 +16,7 @@ interface SceneProps {
   selectedBlob: BlobInstanceData | null;
   onSelectBlob: (blob: BlobInstanceData | null) => void;
   onHoverBlob: (blob: BlobInstanceData | null) => void;
+  activeOutlineCountry?: string | null;
   debug?: boolean;
   showMarkers?: boolean;
   onInteractionStart?: () => void;
@@ -30,6 +32,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
       selectedBlob,
       onSelectBlob,
       onHoverBlob,
+      activeOutlineCountry,
       debug = false,
       showMarkers = false,
       onInteractionStart,
@@ -97,6 +100,9 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
 
             {/* Debug Country Candidate Markers & Footprints (Toggled with 'M' key) */}
             <CountryMarkers visible={showMarkers} blobs={blobs} />
+
+            {/* Country Outline on Hover & Selection */}
+            <CountryOutline countryCode={activeOutlineCountry ?? null} />
 
             {/* Kawaii Mochi Blobs (Star of the show!) */}
             <BlobsLayer
