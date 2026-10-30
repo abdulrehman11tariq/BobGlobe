@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node tests/scatterCheck.test.mjs && node tests/landmarkCheck.test.mjs"
+    "test": "node tests/scatterCheck.test.mjs && node tests/landmarkCheck.test.mjs && node tests/elevationAudit.test.mjs && node tests/dataAggregation.test.mjs",
+    "fetch-data": "node scripts/fetchData.mjs",
+    "fetch-data:dry": "node scripts/fetchData.mjs --dry",
+    "verify-data": "node scripts/verifyData.mjs"
   },
   "dependencies": {
     "@react-spring/three": "^9.7.3",

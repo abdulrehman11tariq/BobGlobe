@@ -9,7 +9,7 @@ export const EARTH_CONFIG = {
   // Planet Geometry
   PLANET_RADIUS: 2.5,
   SPHERE_SEGMENTS: 192,            // 192x192 smooth sphere
-  LAND_ELEVATION: 0.02,            // Slight height lift for land vertices/blobs (0.8% of radius)
+  LAND_ELEVATION: 0.0,             // Planet surface is at exact base radius (no elevation offset)
 
   // Colors & Outline
   colors: {

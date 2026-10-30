@@ -325,10 +325,12 @@ export function computeGlobalBlobLayout(
     }
 
     // Convert placed items to BlobInstanceData
+    // Blobs pivot at the bottom of their body (base touches ground)
+    const BASE_EMBED = 0.0010; // Tiny embed (~0.04% of radius) to eliminate any chord sagitta air gaps
     for (const item of bestPlacedThisCountry) {
       const surfR = getSurfaceRadius(item.lat, item.lng);
-      const liftedR = surfR + item.radius * 0.72;
-      const pos = latLngToVec3(item.lat, item.lng, liftedR);
+      const baseR = surfR - BASE_EMBED;
+      const pos = latLngToVec3(item.lat, item.lng, baseR);
       const norm = pos.clone().normalize();
 
       allPlaced.push({

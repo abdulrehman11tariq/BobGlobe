@@ -232,14 +232,14 @@ export const MochiBlob: FC<MochiBlobProps> = ({
     const breatheY = 1.0 + breatheSin * MOCHI_CONFIG.BREATHE_SQUASH_Y;
     const breatheXZ = 1.0 - breatheSin * MOCHI_CONFIG.BREATHE_STRETCH_XZ;
 
-    // Apply combined scale to body
+    // Apply combined scale to body upward from the bottom pivot (lowest vertex at y = -0.4992)
+    // Anchoring bodyGroupRef at +0.4992 * scaleY guarantees bottom of body remains exactly at Y = 0 on ground
     const baseR = currentRadius.current;
+    const scaleY = baseR * breatheY * boingScale.current.y;
+    const scaleXZ = baseR * breatheXZ * boingScale.current.xz;
     if (bodyGroupRef.current) {
-      bodyGroupRef.current.scale.set(
-        baseR * breatheXZ * boingScale.current.xz,
-        baseR * breatheY * boingScale.current.y,
-        baseR * breatheXZ * boingScale.current.xz
-      );
+      bodyGroupRef.current.position.set(0, 0.4992 * scaleY, 0);
+      bodyGroupRef.current.scale.set(scaleXZ, scaleY, scaleXZ);
     }
 
     // 5. Billboard-ish Head/Face rotation: turns towards camera around up-axis (limited to ~70 deg)
@@ -296,11 +296,11 @@ export const MochiBlob: FC<MochiBlobProps> = ({
         onHoverEnd();
       }}
     >
-      {/* Soft Contact Shadow on Ground */}
+      {/* Soft Contact Shadow on Ground (Sits at Y = 0 on terrain surface) */}
       <mesh
         geometry={sharedShadowGeom}
         material={shadowMaterial}
-        position={[0, -currentRadius.current * 0.76, 0]}
+        position={[0, 0.0008, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
         scale={[currentRadius.current * 1.35, currentRadius.current * 1.35, 1.0]}
       />

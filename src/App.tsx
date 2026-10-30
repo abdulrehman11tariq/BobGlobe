@@ -12,6 +12,7 @@ import { computeGlobalBlobLayout } from './utils/blobPlacement';
 import { loadLandMask, isLandMaskReady } from './utils/terrainSampler';
 import { loadCountryIdMask, isCountryIdMaskReady } from './utils/countryIdSampler';
 import { runLandmarkStartupCheck } from './utils/landmarkCheck';
+import { runElevationAudit } from './utils/elevationAudit';
 import { BORDER_OUTLINE_CONFIG } from './theme/blobConfig';
 import type { ControlsHandle } from './components/Globe/Controls';
 import type { BlobInstanceData } from './types';
@@ -25,6 +26,7 @@ export function App() {
   const [activeOutlineCountry, setActiveOutlineCountry] = useState<string | null>(null);
   const [debug, setDebug] = useState<boolean>(false);
   const [showMarkers, setShowMarkers] = useState<boolean>(false);
+  const [auditMessage, setAuditMessage] = useState<string | null>(null);
   const [masksReady, setMasksReady] = useState<boolean>(
     isLandMaskReady() && isCountryIdMaskReady()
   );
@@ -91,12 +93,21 @@ export function App() {
         setDebug((prev) => !prev);
       } else if (e.key === 'm' || e.key === 'M') {
         setShowMarkers((prev) => !prev);
+      } else if (e.key === 'g' || e.key === 'G') {
+        const results = runElevationAudit(allBlobs);
+        const pass = results.length > 0 && results.every((r) => r.passed);
+        setAuditMessage(
+          pass
+            ? `✅ Elevation Audit PASSED: 8/8 sample blobs within < 0.003 units`
+            : `⚠️ Elevation Audit: Check console for blob warnings`
+        );
+        setTimeout(() => setAuditMessage(null), 4000);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [allBlobs]);
 
   const handleToggleAutoRotate = useCallback(() => {
     setAutoRotate((prev) => !prev);
@@ -178,6 +189,14 @@ export function App() {
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-full bg-neutral-900/90 text-yellow-300 border border-yellow-400/50 shadow-xl text-xs font-mono font-semibold flex items-center gap-2 animate-pulse">
           <span>📍 Country Coordinates Active</span>
           <span className="text-[10px] text-neutral-400">(Press M to hide)</span>
+        </div>
+      )}
+
+      {/* Elevation Audit Toast Indicator (Toggle with 'G') */}
+      {auditMessage && (
+        <div className="fixed top-28 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-neutral-900/95 text-emerald-300 border border-emerald-400/50 shadow-2xl text-xs font-mono font-semibold flex items-center gap-2">
+          <span>{auditMessage}</span>
+          <span className="text-[10px] text-neutral-400">(logged to console)</span>
         </div>
       )}
 

@@ -1,0 +1,67 @@
+name: Nightly Data Refresh
+
+on:
+  schedule:
+    # Runs at 02:00 UTC every night
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-data-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Cache Data Pipeline Cache
+        uses: actions/cache@v4
+        with:
+          path: scripts/cache
+          key: bobglobe-data-cache-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            bobglobe-data-cache-${{ runner.os }}-
+            bobglobe-data-cache-
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Fetch Real Data (Apple Music & Deezer)
+        run: npm run fetch-data
+
+      - name: Verify Data & Run Unit Tests
+        run: |
+          npm test
+          npm run verify-data
+
+      - name: Commit & Push If Changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Only stage public/data and scripts/cache
+          git add public/data scripts/cache
+          
+          # Check if there are changes in public/data
+          if git diff --staged --quiet public/data; then
+            echo "No data changes detected. Skipping commit."
+          else
+            echo "Changes detected in public/data. Committing and pushing..."
+            git commit -m "chore: nightly data refresh [skip ci]"
+            git push
+          fi
