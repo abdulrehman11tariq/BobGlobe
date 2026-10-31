@@ -114,6 +114,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
             <CameraController
               selectedBlob={selectedBlob}
               controlsRef={ref as React.RefObject<ControlsHandle>}
+              isInteracting={isInteracting}
               onTransitionChange={onCameraTransitionChange}
             />
 
