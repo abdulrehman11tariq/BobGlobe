@@ -16,6 +16,7 @@ interface SceneProps {
   selectedBlob: BlobInstanceData | null;
   playingBlobId?: string | null;
   trendAvailable?: boolean;
+  isInteracting?: boolean;
   onSelectBlob: (blob: BlobInstanceData | null) => void;
   onHoverBlob: (blob: BlobInstanceData | null) => void;
   activeOutlineCountry?: string | null;
@@ -23,6 +24,7 @@ interface SceneProps {
   showMarkers?: boolean;
   onInteractionStart?: () => void;
   onInteractionEnd?: () => void;
+  onCameraTransitionChange?: (isFlying: boolean) => void;
   children?: ReactNode;
 }
 
@@ -38,6 +40,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
       selectedBlob,
       playingBlobId = null,
       trendAvailable = false,
+      isInteracting = false,
       onSelectBlob,
       onHoverBlob,
       activeOutlineCountry,
@@ -45,6 +48,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
       showMarkers = false,
       onInteractionStart,
       onInteractionEnd,
+      onCameraTransitionChange,
       children,
     },
     ref
@@ -64,6 +68,12 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
             powerPreference: 'high-performance',
           }}
           dpr={[1, isTouchDevice ? 1.5 : 2]}
+          onPointerMissed={(e) => {
+            // Deselect when clicking empty space
+            if (e.type === 'click') {
+              onSelectBlob(null);
+            }
+          }}
         >
           {/* Planetary Sun Directional Lighting */}
           <directionalLight
@@ -79,6 +89,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
             {/* Clean, Soft, Premium Earth */}
             <CleanEarth
               radius={EARTH_CONFIG.PLANET_RADIUS}
+              onDeselect={() => onSelectBlob(null)}
             />
 
             {/* Debug Country Candidate Markers & Footprints (Toggled with 'M' key) */}
@@ -93,6 +104,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
               selectedBlob={selectedBlob}
               playingBlobId={playingBlobId}
               trendAvailable={trendAvailable}
+              isInteracting={isInteracting}
               onSelectBlob={(b) => onSelectBlob(b)}
               onHoverBlob={onHoverBlob}
               debug={debug}
@@ -102,6 +114,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
             <CameraController
               selectedBlob={selectedBlob}
               controlsRef={ref as React.RefObject<ControlsHandle>}
+              onTransitionChange={onCameraTransitionChange}
             />
 
             {children}
@@ -109,7 +122,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
 
           <Controls
             ref={ref}
-            autoRotate={autoRotate && !selectedBlob}
+            autoRotate={autoRotate}
             onInteractionStart={onInteractionStart}
             onInteractionEnd={onInteractionEnd}
           />

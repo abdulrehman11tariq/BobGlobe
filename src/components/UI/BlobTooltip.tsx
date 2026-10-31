@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import type { BlobInstanceData } from '../../types';
-import { TrendingUp, TrendingDown, Minus, Sparkles, Music2, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Sparkles, Music2, AlertCircle, Loader2 } from 'lucide-react';
 import { usePreviewPlayer } from '../../hooks/usePreviewPlayer';
 import { assetUrl } from '../../utils/assetUrl';
 
@@ -16,7 +16,7 @@ function getCountryFlag(code: string): string {
 }
 
 export const BlobTooltip: FC<BlobTooltipProps> = ({ blob, trendAvailable = false }) => {
-  const { isPlaying, currentTrack, currentTime, duration, statusMessage } = usePreviewPlayer();
+  const { isPlaying, currentTrack, currentTime, duration, statusMessage, isLoadingSlow } = usePreviewPlayer();
 
   if (!blob) return null;
 
@@ -136,6 +136,11 @@ export const BlobTooltip: FC<BlobTooltipProps> = ({ blob, trendAvailable = false
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
+            </div>
+          ) : isLoadingSlow ? (
+            <div className="flex items-center gap-1.5 text-[10px] text-sky-300 font-semibold py-0.5 animate-pulse">
+              <Loader2 className="w-3 h-3 text-sky-400 animate-spin shrink-0" />
+              <span>Loading preview...</span>
             </div>
           ) : statusMessage ? (
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-300/90 py-0.5">

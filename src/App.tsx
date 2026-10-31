@@ -28,6 +28,9 @@ export function App() {
   const controlsRef = useRef<ControlsHandle>(null);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [isInteracting, setIsInteracting] = useState<boolean>(false);
+  const [isCameraFlying, setIsCameraFlying] = useState<boolean>(false);
+  const [isDeselectCooldown, setIsDeselectCooldown] = useState<boolean>(false);
+  const deselectTimerRef = useRef<number | null>(null);
   const [selectedBlob, setSelectedBlob] = useState<BlobInstanceData | null>(null);
   const [hoveredBlob, setHoveredBlob] = useState<BlobInstanceData | null>(null);
   const [activeOutlineCountry, setActiveOutlineCountry] = useState<string | null>(null);
@@ -43,6 +46,25 @@ export function App() {
 
   // Audio Engine Hook
   const { isPlaying, currentBlobId, player } = usePreviewPlayer();
+
+  const cancelDeselectCooldown = useCallback(() => {
+    if (deselectTimerRef.current) {
+      clearTimeout(deselectTimerRef.current);
+      deselectTimerRef.current = null;
+    }
+    setIsDeselectCooldown(false);
+  }, []);
+
+  const triggerDeselectCooldown = useCallback(() => {
+    if (deselectTimerRef.current) {
+      clearTimeout(deselectTimerRef.current);
+    }
+    setIsDeselectCooldown(true);
+    deselectTimerRef.current = window.setTimeout(() => {
+      setIsDeselectCooldown(false);
+      deselectTimerRef.current = null;
+    }, 10000); // Wait 10 seconds of inactivity before slowly resuming auto-rotate
+  }, []);
 
   // Preload land mask & country ID mask textures for CPU lookups
   useEffect(() => {
@@ -102,11 +124,13 @@ export function App() {
 
   // Select / Click Handler:
   // If user clicks a blob, open panel and ensure audio plays without restarting
-  // If user clicks empty canvas (blob = null), deselect & stop playing
+  // If user clicks empty space/ocean or close button (blob = null), deselect:
+  // camera freezes where it is, sound pauses, and auto-rotate waits 10s before slowly resuming
   const handleSelectBlob = useCallback(
     (blob: BlobInstanceData | null) => {
       setSelectedBlob(blob);
       if (blob) {
+        cancelDeselectCooldown();
         // If not playing or playing another blob, trigger clean track for this blob
         if (!isPlaying || currentBlobId !== blob.id) {
           player.hoverBlob(blob.artist, blob.id);
@@ -117,15 +141,17 @@ export function App() {
         url.searchParams.set('country', blob.country.code);
         window.history.replaceState({}, '', url.toString());
       } else {
-        // Tap elsewhere = stop
+        // Deselect: freeze camera where it is, stop playing, wait 10s before auto-rotate
+        triggerDeselectCooldown();
         player.fadeOutAndPause();
         const url = new URL(window.location.href);
         url.searchParams.delete('artist');
         url.searchParams.delete('country');
-        window.history.replaceState({}, '', url.toString());
+        const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
+        window.history.replaceState({}, '', cleanUrl);
       }
     },
-    [isPlaying, currentBlobId, player]
+    [isPlaying, currentBlobId, player, cancelDeselectCooldown, triggerDeselectCooldown]
   );
 
   // 3. Deep Link Resolution: ?artist=<artistId> or ?country=<ISO>
@@ -177,7 +203,7 @@ export function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setSelectedBlob(null);
+        handleSelectBlob(null);
         setIsAboutOpen(false);
         setIsGlobalTopOpen(false);
       } else if (import.meta.env.DEV && (e.key === 'd' || e.key === 'D')) {
@@ -198,7 +224,7 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [allBlobs]);
+  }, [allBlobs, handleSelectBlob]);
 
   const handleToggleAutoRotate = useCallback(() => {
     setAutoRotate((prev) => !prev);
@@ -212,7 +238,18 @@ export function App() {
   const handleInteractionEnd = useCallback(() => {
     setIsInteracting(false);
     player.setDraggingOrFlying(false);
-  }, [player]);
+    if (isDeselectCooldown) {
+      triggerDeselectCooldown();
+    }
+  }, [player, isDeselectCooldown, triggerDeselectCooldown]);
+
+  const handleCameraTransitionChange = useCallback(
+    (isFlying: boolean) => {
+      setIsCameraFlying(isFlying);
+      player.setDraggingOrFlying(isFlying);
+    },
+    [player]
+  );
 
   const handleZoomIn = useCallback(() => {
     controlsRef.current?.zoomIn();
@@ -223,21 +260,26 @@ export function App() {
   }, []);
 
   const handleResetCamera = useCallback(() => {
-    setSelectedBlob(null);
+    handleSelectBlob(null);
     controlsRef.current?.resetCamera();
-  }, []);
+  }, [handleSelectBlob]);
 
-  // Hover Handler: connects 350ms hover delay audio playback
+  // Hover Handler: connects 350ms hover delay audio playback & preloads same-country previews
   const handleHoverBlob = useCallback(
     (blob: BlobInstanceData | null) => {
+      if (isInteracting || isCameraFlying) return;
       setHoveredBlob(blob);
       if (blob) {
         player.hoverBlob(blob.artist, blob.id);
+        const sameCountryBlobs = allBlobs.filter(
+          (b) => b.country.code === blob.country.code && b.id !== blob.id
+        );
+        player.preloadCountryPreviews(sameCountryBlobs);
       } else {
         player.hoverBlob(null, null);
       }
     },
-    [player]
+    [isInteracting, isCameraFlying, allBlobs, player]
   );
 
   if (import.meta.env.DEV && isDebugBlobStudio) {
@@ -359,11 +401,12 @@ export function App() {
       {/* 3D WebGL Canvas Scene */}
       <Scene
         ref={controlsRef}
-        autoRotate={autoRotate && !isInteracting}
+        autoRotate={autoRotate && !selectedBlob && !isDeselectCooldown && !isInteracting}
         blobs={allBlobs}
         selectedBlob={selectedBlob}
         playingBlobId={isPlaying ? currentBlobId : null}
         trendAvailable={trendAvailable}
+        isInteracting={isInteracting || isCameraFlying}
         onSelectBlob={handleSelectBlob}
         onHoverBlob={handleHoverBlob}
         activeOutlineCountry={activeOutlineCountry}
@@ -371,11 +414,12 @@ export function App() {
         showMarkers={import.meta.env.DEV ? showMarkers : false}
         onInteractionStart={handleInteractionStart}
         onInteractionEnd={handleInteractionEnd}
+        onCameraTransitionChange={handleCameraTransitionChange}
       />
 
       {/* Bottom Floating Controls */}
       <ControlsOverlay
-        autoRotate={autoRotate && !selectedBlob}
+        autoRotate={autoRotate && !selectedBlob && !isDeselectCooldown}
         onToggleAutoRotate={handleToggleAutoRotate}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}

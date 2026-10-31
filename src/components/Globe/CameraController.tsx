@@ -9,12 +9,17 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 interface CameraControllerProps {
   selectedBlob: BlobInstanceData | null;
   controlsRef: React.RefObject<{ getControls: () => OrbitControlsImpl | null }>;
+  onTransitionChange?: (isFlying: boolean) => void;
 }
 
 const DEFAULT_CAMERA_POS = new THREE.Vector3(0, 1.2, 5.8);
 const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
 
-export const CameraController: FC<CameraControllerProps> = ({ selectedBlob, controlsRef }) => {
+export const CameraController: FC<CameraControllerProps> = ({
+  selectedBlob,
+  controlsRef,
+  onTransitionChange,
+}) => {
   const { camera } = useThree();
   const targetCamPos = useRef<THREE.Vector3>(DEFAULT_CAMERA_POS.clone());
   const targetControlsTarget = useRef<THREE.Vector3>(DEFAULT_TARGET.clone());
@@ -34,13 +39,14 @@ export const CameraController: FC<CameraControllerProps> = ({ selectedBlob, cont
       targetCamPos.current.copy(camPos);
       targetControlsTarget.current.copy(blobPos);
       isTransitioning.current = true;
+      onTransitionChange?.(true);
     } else {
-      // Return to full globe overview
-      targetCamPos.current.copy(DEFAULT_CAMERA_POS);
-      targetControlsTarget.current.copy(DEFAULT_TARGET);
-      isTransitioning.current = true;
+      // FREEZE: Deselecting keeps camera position, target, and distance frozen exactly where they are!
+      // The user zoomed in to explore; do NOT rip the camera away from them.
+      isTransitioning.current = false;
+      onTransitionChange?.(false);
     }
-  }, [selectedBlob]);
+  }, [selectedBlob, onTransitionChange]);
 
   useFrame((_, delta) => {
     if (!isTransitioning.current) return;
@@ -60,6 +66,7 @@ export const CameraController: FC<CameraControllerProps> = ({ selectedBlob, cont
     const targetDist = controls.target.distanceTo(targetControlsTarget.current);
     if (posDist < 0.01 && targetDist < 0.01) {
       isTransitioning.current = false;
+      onTransitionChange?.(false);
     }
   });
 

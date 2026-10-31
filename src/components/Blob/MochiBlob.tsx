@@ -36,6 +36,7 @@ const sharedHighlightGeom = new THREE.CircleGeometry(0.24, 16);
 const sharedNoteHeadGeom = new THREE.SphereGeometry(0.12, 10, 8);
 const sharedNoteStemGeom = new THREE.CylinderGeometry(0.02, 0.02, 0.35, 6);
 const sharedNoteFlagGeom = new THREE.BoxGeometry(0.14, 0.05, 0.03);
+const sharedHitGeom = new THREE.SphereGeometry(1, 12, 10);
 
 /**
  * Deterministically pick accessory and cheek mark from artist id
@@ -207,6 +208,15 @@ export const MochiBlob: FC<MochiBlobProps> = ({
     });
   }, [faceTexture]);
 
+  // Invisible hit proxy material: 100% opaque, no color/depth writes
+  const hitMaterial = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      colorWrite: false,
+      depthWrite: false,
+      transparent: false,
+    });
+  }, []);
+
   // Trigger boing spring impulse when clicked or hovered
   useEffect(() => {
     if (isSelected || isHovered) {
@@ -358,6 +368,8 @@ export const MochiBlob: FC<MochiBlobProps> = ({
     }
   });
 
+  const hitRadius = Math.max(blob.targetRadius * 1.25, 0.024);
+
   return (
     <group
       ref={rootGroupRef}
@@ -368,16 +380,25 @@ export const MochiBlob: FC<MochiBlobProps> = ({
         e.stopPropagation();
         onSelect();
       }}
-      onPointerOver={(e) => {
+      onPointerEnter={(e) => {
         e.stopPropagation();
         document.body.style.cursor = 'pointer';
         onHoverStart();
       }}
-      onPointerOut={() => {
+      onPointerLeave={() => {
         document.body.style.cursor = 'auto';
         onHoverEnd();
       }}
     >
+      {/* Invisible Sticky Raycast Hit Proxy to prevent hover drop on micro-movements */}
+      <mesh
+        geometry={sharedHitGeom}
+        material={hitMaterial}
+        position={[0, hitRadius * 0.5, 0]}
+        scale={[hitRadius, hitRadius, hitRadius]}
+        renderOrder={100}
+      />
+
       {/* Soft Contact Shadow on Ground (Sits at Y = 0 on terrain surface) */}
       <mesh
         geometry={sharedShadowGeom}

@@ -5,6 +5,7 @@ export interface PlayerState {
   audioUnlocked: boolean;
   isPlaying: boolean;
   isPaused: boolean;
+  isLoadingSlow: boolean;
   currentTrack: TopTrack | null;
   currentArtist: Artist | null;
   currentBlobId: string | null;
@@ -19,19 +20,56 @@ export interface PlayerState {
 
 type StateListener = (state: PlayerState) => void;
 
-class PreviewPlayerEngine {
-  private audioA: HTMLAudioElement;
-  private audioB: HTMLAudioElement;
-  private activeChannel: 'A' | 'B' = 'A';
+const AUDIO_POOL_SIZE = 12;
 
+interface PoolItem {
+  audio: HTMLAudioElement;
+  index: number;
+  lastUsed: number;
+  currentSrc: string;
+}
+
+interface ActiveFade {
+  audio: HTMLAudioElement;
+  startVol: number;
+  targetVol: number;
+  startTime: number;
+  durationMs: number;
+  onComplete?: () => void;
+}
+
+/**
+ * URL-gated audio debug logger: enabled when ?audiodebug=1 is present
+ */
+export function audioLog(step: string, details?: unknown) {
+  if (typeof window !== 'undefined') {
+    const isDebug = new URLSearchParams(window.location.search).get('audiodebug') === '1';
+    if (isDebug) {
+      const now = performance.now().toFixed(1);
+      console.log(`[AudioDebug +${now}ms] ${step}`, details ?? '');
+    }
+  }
+}
+
+class PreviewPlayerEngine {
+  private pool: PoolItem[] = [];
+  private activeItem: PoolItem | null = null;
+
+  private hoverGen = 0;
   private hoverTimer: number | null = null;
-  private fadeInterval: number | null = null;
+  private slowTimer: number | null = null;
+  private fallbackTimeout: number | null = null;
+
+  private activeFades = new Map<HTMLAudioElement, ActiveFade>();
+  private fadeRafId: number | null = null;
   private beatRafId: number | null = null;
+  private isFadingOutAtEnd = false;
 
   private state: PlayerState = {
     audioUnlocked: false,
     isPlaying: false,
     isPaused: false,
+    isLoadingSlow: false,
     currentTrack: null,
     currentArtist: null,
     currentBlobId: null,
@@ -51,13 +89,8 @@ class PreviewPlayerEngine {
   private wasPlayingBeforeDrag = false;
 
   constructor() {
-    this.audioA = new Audio();
-    this.audioB = new Audio();
-    this.audioA.preload = 'auto';
-    this.audioB.preload = 'auto';
-
-    this.setupAudioListeners(this.audioA, 'A');
-    this.setupAudioListeners(this.audioB, 'B');
+    this.initPool();
+    this.setupWindowUnlockListeners();
 
     // Tab blur & focus handling
     if (typeof document !== 'undefined') {
@@ -82,27 +115,273 @@ class PreviewPlayerEngine {
     this.startBeatClock();
   }
 
-  private setupAudioListeners(audio: HTMLAudioElement, channel: 'A' | 'B') {
+  private initPool() {
+    if (typeof window === 'undefined') return;
+
+    for (let i = 0; i < AUDIO_POOL_SIZE; i++) {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      const item: PoolItem = {
+        audio,
+        index: i,
+        lastUsed: 0,
+        currentSrc: '',
+      };
+      this.setupAudioListeners(item);
+      this.pool.push(item);
+    }
+  }
+
+  private setupAudioListeners(item: PoolItem) {
+    const { audio, index } = item;
+
+    audio.addEventListener('canplay', () => {
+      if (this.activeItem === item) {
+        audioLog('canplay fired', {
+          poolIndex: index,
+          duration: audio.duration,
+          readyState: audio.readyState,
+        });
+      }
+    });
+
+    audio.addEventListener('loadedmetadata', () => {
+      // Chorus seek enhancement: seek to ~8s (or 20% duration) so user hears chorus
+      try {
+        if (audio.duration && audio.duration > 15 && audio.currentTime < 1) {
+          audio.currentTime = Math.min(8, audio.duration * 0.20);
+        }
+      } catch {
+        // Ignore seek restriction errors
+      }
+    });
+
     audio.addEventListener('timeupdate', () => {
-      if (this.activeChannel === channel && this.state.isPlaying) {
+      if (this.activeItem === item && this.state.isPlaying) {
         this.state.currentTime = audio.currentTime || 0;
         this.state.duration = audio.duration || 30;
         this.emit();
+
+        // Fade out over last 1.5s instead of stopping abruptly
+        if (
+          audio.duration > 0 &&
+          audio.duration - audio.currentTime <= 1.5 &&
+          !this.isFadingOutAtEnd
+        ) {
+          this.isFadingOutAtEnd = true;
+          this.rampVolume(audio, 0, 1500, () => {
+            this.isFadingOutAtEnd = false;
+            this.handleTrackEnded();
+          });
+        }
       }
     });
 
     audio.addEventListener('ended', () => {
-      if (this.activeChannel === channel) {
+      if (this.activeItem === item) {
         this.handleTrackEnded();
       }
     });
 
     audio.addEventListener('error', () => {
-      if (this.activeChannel === channel) {
+      if (this.activeItem === item) {
+        audioLog('audio error fired', { poolIndex: index, error: audio.error });
         this.handleTrackError();
       }
     });
   }
+
+  private setupWindowUnlockListeners() {
+    if (typeof window === 'undefined') return;
+
+    // Check if browser already permits WebAudio / playback
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (AudioCtx) {
+      try {
+        const ctx = new AudioCtx();
+        if (ctx.state === 'running') {
+          this.state.audioUnlocked = true;
+          ctx.close().catch(() => {});
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    // Unlock reliably on FIRST user gesture anywhere on window
+    const onUserGesture = () => {
+      this.unlockAudio().then((unlocked) => {
+        if (unlocked) {
+          window.removeEventListener('pointerdown', onUserGesture);
+          window.removeEventListener('keydown', onUserGesture);
+          window.removeEventListener('touchend', onUserGesture);
+        }
+      });
+    };
+
+    window.addEventListener('pointerdown', onUserGesture, { passive: true });
+    window.addEventListener('keydown', onUserGesture, { passive: true });
+    window.addEventListener('touchend', onUserGesture, { passive: true });
+  }
+
+  /**
+   * Unlock Web Audio / HTMLAudio playback from user gesture
+   */
+  public async unlockAudio(): Promise<boolean> {
+    if (this.state.audioUnlocked) return true;
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+        ctx.close().catch(() => {});
+      }
+
+      if (this.pool.length > 0) {
+        const first = this.pool[0].audio;
+        first.muted = true;
+        first.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
+        await first.play();
+        first.pause();
+        first.currentTime = 0;
+        first.muted = this.state.isMuted;
+      }
+
+      this.state.audioUnlocked = true;
+      audioLog('audio unlocked via user gesture');
+      this.emit();
+      return true;
+    } catch (e) {
+      console.warn('Audio unlock deferred or failed:', e);
+      return false;
+    }
+  }
+
+  private acquireAudio(src: string): PoolItem {
+    const now = performance.now();
+    // 1. Check if src is already assigned to a pooled element
+    const existing = this.pool.find((p) => p.currentSrc === src);
+    if (existing) {
+      existing.lastUsed = now;
+      return existing;
+    }
+
+    // 2. Pick least recently used element that is not active or actively fading in
+    let candidate: PoolItem | null = null;
+    let oldestTime = Infinity;
+
+    for (const item of this.pool) {
+      if (item === this.activeItem && this.state.isPlaying) continue;
+      if (this.activeFades.has(item.audio)) continue;
+      if (item.lastUsed < oldestTime) {
+        oldestTime = item.lastUsed;
+        candidate = item;
+      }
+    }
+
+    // Fallback to any non-active item if all are marked
+    if (!candidate) {
+      candidate = this.pool.find((p) => p !== this.activeItem) || this.pool[0];
+    }
+
+    // Reset element
+    candidate.audio.pause();
+    candidate.audio.currentTime = 0;
+    candidate.currentSrc = src;
+    candidate.lastUsed = now;
+    candidate.audio.src = src;
+    candidate.audio.load();
+
+    return candidate;
+  }
+
+  /**
+   * Preload clean previews for other blobs in same country in background
+   */
+  public preloadCountryPreviews(blobs: { artist: Artist }[]) {
+    if (!blobs || blobs.length === 0) return;
+    for (const b of blobs) {
+      const clean = this.getBestCleanTrack(b.artist);
+      if (clean?.previewUrl) {
+        const existing = this.pool.find((p) => p.currentSrc === clean.previewUrl);
+        if (!existing) {
+          const idle = this.pool.find(
+            (p) =>
+              p !== this.activeItem &&
+              !this.activeFades.has(p.audio) &&
+              (!p.audio.src || p.audio.paused)
+          );
+          if (idle) {
+            idle.currentSrc = clean.previewUrl;
+            idle.audio.src = clean.previewUrl;
+            idle.audio.preload = 'auto';
+            idle.audio.load();
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Smooth volume ramp driven by requestAnimationFrame interpolating from CURRENT volume
+   */
+  private rampVolume(
+    audio: HTMLAudioElement,
+    targetVol: number,
+    durationMs: number,
+    onComplete?: () => void
+  ) {
+    const startVol = audio.volume;
+    audioLog('fade start', {
+      from: Number(startVol.toFixed(2)),
+      to: Number(targetVol.toFixed(2)),
+      durationMs,
+    });
+
+    if (durationMs <= 0 || Math.abs(startVol - targetVol) < 0.001) {
+      audio.volume = targetVol;
+      audioLog('fade end', { finalVol: targetVol });
+      onComplete?.();
+      return;
+    }
+
+    this.activeFades.set(audio, {
+      audio,
+      startVol,
+      targetVol,
+      startTime: performance.now(),
+      durationMs,
+      onComplete,
+    });
+
+    if (!this.fadeRafId) {
+      this.fadeRafId = requestAnimationFrame(this.stepFades);
+    }
+  }
+
+  private stepFades = (now: number) => {
+    this.activeFades.forEach((fade, audio) => {
+      const elapsed = now - fade.startTime;
+      const progress = Math.min(1, Math.max(0, elapsed / fade.durationMs));
+      const currentVol = fade.startVol + (fade.targetVol - fade.startVol) * progress;
+      audio.volume = Math.max(0, Math.min(1, currentVol));
+
+      if (progress >= 1) {
+        audio.volume = fade.targetVol;
+        audioLog('fade end', { finalVol: fade.targetVol });
+        this.activeFades.delete(audio);
+        fade.onComplete?.();
+      }
+    });
+
+    if (this.activeFades.size > 0) {
+      this.fadeRafId = requestAnimationFrame(this.stepFades);
+    } else {
+      this.fadeRafId = null;
+    }
+  };
 
   private startBeatClock() {
     if (typeof window === 'undefined') return;
@@ -131,6 +410,10 @@ class PreviewPlayerEngine {
       cancelAnimationFrame(this.beatRafId);
       this.beatRafId = null;
     }
+    if (this.fadeRafId) {
+      cancelAnimationFrame(this.fadeRafId);
+      this.fadeRafId = null;
+    }
   }
 
   public subscribe(listener: StateListener): () => void {
@@ -151,27 +434,6 @@ class PreviewPlayerEngine {
   }
 
   /**
-   * Unlock Web Audio / HTMLAudio playback from user gesture
-   */
-  public async unlockAudio(): Promise<boolean> {
-    if (this.state.audioUnlocked) return true;
-    try {
-      this.audioA.muted = true;
-      this.audioA.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
-      await this.audioA.play();
-      this.audioA.pause();
-      this.audioA.currentTime = 0;
-      this.audioA.muted = this.state.isMuted;
-      this.state.audioUnlocked = true;
-      this.emit();
-      return true;
-    } catch (e) {
-      console.warn('Audio unlock failed or deferred:', e);
-      return false;
-    }
-  }
-
-  /**
    * Finds the best-ranked non-explicit track with a preview
    */
   private getBestCleanTrack(artist: Artist): TopTrack | null {
@@ -184,22 +446,42 @@ class PreviewPlayerEngine {
    * Handles pointer hovering over a blob
    */
   public hoverBlob(artist: Artist | null, blobId: string | null) {
+    const gen = ++this.hoverGen;
+
     if (this.hoverTimer) {
       clearTimeout(this.hoverTimer);
       this.hoverTimer = null;
     }
+    if (this.slowTimer) {
+      clearTimeout(this.slowTimer);
+      this.slowTimer = null;
+    }
+    if (this.fallbackTimeout) {
+      clearTimeout(this.fallbackTimeout);
+      this.fallbackTimeout = null;
+    }
+    this.state.isLoadingSlow = false;
 
     if (!artist || !blobId) {
+      audioLog('pointerleave', { blobId: this.pendingHoverBlobId });
       this.pendingHoverBlobId = null;
-      // Leaving blob: fade out and pause
+      audioLog('fade out and pause');
       this.fadeOutAndPause(AUDIO_CONFIG.FADE_OUT_MS);
       return;
     }
 
     this.pendingHoverBlobId = blobId;
+    audioLog('pointerenter', { artist: artist.name, blobId });
+    audioLog('hoveredBlob set', { blobId });
 
     // Check if clean track exists
     const cleanTrack = this.getBestCleanTrack(artist);
+    audioLog('preview chosen', {
+      artist: artist.name,
+      track: cleanTrack?.title ?? 'none',
+      explicit: cleanTrack?.explicit ?? false,
+      previewUrl: cleanTrack?.previewUrl ?? null,
+    });
 
     // If no clean track, explicit songs NEVER autoplay
     if (!cleanTrack) {
@@ -213,24 +495,37 @@ class PreviewPlayerEngine {
       return;
     }
 
-    // Preload track immediately
-    const nextChannel = this.activeChannel === 'A' ? 'B' : 'A';
-    const nextAudio = nextChannel === 'A' ? this.audioA : this.audioB;
-    if (nextAudio.src !== cleanTrack.previewUrl) {
-      nextAudio.src = cleanTrack.previewUrl;
-      nextAudio.load();
-    }
+    // Early loading: Acquire from pool and start loading IMMEDIATELY
+    const poolItem = this.acquireAudio(cleanTrack.previewUrl);
+    audioLog('audio element created and src set', {
+      poolIndex: poolItem.index,
+      src: cleanTrack.previewUrl,
+    });
 
-    // Wait 350ms before fading in
+    // 600ms loading indicator timer
+    this.slowTimer = window.setTimeout(() => {
+      if (this.hoverGen === gen && !this.state.isPlaying) {
+        this.state.isLoadingSlow = true;
+        this.emit();
+      }
+    }, 600);
+
+    // 4s fallback timer
+    this.fallbackTimeout = window.setTimeout(() => {
+      if (this.hoverGen === gen && !this.state.isPlaying) {
+        audioLog('load timeout >4s, trying fallback');
+        this.handleTrackError(artist, blobId, cleanTrack);
+      }
+    }, 4000);
+
+    // 350ms hover delay gates actual audio playback start
+    audioLog('delay timer started', { delayMs: AUDIO_CONFIG.HOVER_DELAY_MS });
     this.hoverTimer = window.setTimeout(() => {
-      // If pointer moved away, ignore
+      if (this.hoverGen !== gen) return;
       if (this.pendingHoverBlobId !== blobId) return;
-      // If globe is dragging or camera flying, ignore
       if (this.isDraggingOrFlying) return;
-      // If audio is locked, hover music stays silent
       if (!this.state.audioUnlocked) return;
 
-      // If already playing this exact track on this blob, keep playing
       if (
         this.state.isPlaying &&
         this.state.currentBlobId === blobId &&
@@ -239,7 +534,7 @@ class PreviewPlayerEngine {
         return;
       }
 
-      this.crossfadeToTrack(artist, cleanTrack, blobId);
+      this.crossfadeToPoolItem(poolItem, artist, cleanTrack, blobId, gen);
     }, AUDIO_CONFIG.HOVER_DELAY_MS);
   }
 
@@ -253,129 +548,143 @@ class PreviewPlayerEngine {
       this.emit();
       return;
     }
-    this.crossfadeToTrack(artist, track, blobId || this.state.currentBlobId || 'manual');
+    const poolItem = this.acquireAudio(track.previewUrl);
+    this.crossfadeToPoolItem(
+      poolItem,
+      artist,
+      track,
+      blobId || this.state.currentBlobId || 'manual',
+      ++this.hoverGen
+    );
   }
 
   /**
-   * Crossfades from current channel to next channel
+   * Crossfade from current audio item to next pooled audio item
    */
-  private crossfadeToTrack(artist: Artist, track: TopTrack, blobId: string) {
-    if (this.fadeInterval) {
-      clearInterval(this.fadeInterval);
-      this.fadeInterval = null;
-    }
-
-    const currentChannel = this.activeChannel;
-    const currentAudio = currentChannel === 'A' ? this.audioA : this.audioB;
-
-    const nextChannel = currentChannel === 'A' ? 'B' : 'A';
-    const nextAudio = nextChannel === 'A' ? this.audioA : this.audioB;
+  private crossfadeToPoolItem(
+    poolItem: PoolItem,
+    artist: Artist,
+    track: TopTrack,
+    blobId: string,
+    gen: number
+  ) {
+    const nextAudio = poolItem.audio;
+    const previousItem = this.activeItem;
+    const previousAudio = previousItem ? previousItem.audio : null;
 
     const targetVol = this.state.isMuted ? 0 : this.state.volume;
 
-    // Prepare next audio
-    if (nextAudio.src !== track.previewUrl) {
-      nextAudio.src = track.previewUrl;
+    // Start with volume 0 if starting fresh or keep current volume
+    if (previousAudio !== nextAudio) {
+      nextAudio.volume = 0;
     }
-    nextAudio.currentTime = 0;
-    nextAudio.volume = 0;
 
-    nextAudio
-      .play()
-      .then(() => {
-        this.activeChannel = nextChannel;
-        this.state.isPlaying = true;
-        this.state.isPaused = false;
-        this.state.currentTrack = track;
-        this.state.currentArtist = artist;
-        this.state.currentBlobId = blobId;
-        this.state.statusMessage = null;
-        this.emit();
-
-        // Ramp next up and current down
-        const steps = 15;
-        const fadeIntervalTime = AUDIO_CONFIG.FADE_IN_MS / steps;
-        let step = 0;
-        const initialCurrentVol = currentAudio.volume;
-
-        this.fadeInterval = window.setInterval(() => {
-          step++;
-          const progress = Math.min(1, step / steps);
-
-          // Fade in next
-          nextAudio.volume = progress * targetVol;
-
-          // Fade out old
-          if (currentAudio && !currentAudio.paused) {
-            currentAudio.volume = Math.max(0, initialCurrentVol * (1 - progress));
+    const playPromise = nextAudio.play();
+    if (playPromise) {
+      playPromise
+        .then(() => {
+          audioLog('play() result', {
+            status: 'success',
+            poolIndex: poolItem.index,
+            track: track.title,
+          });
+          if (this.hoverGen !== gen) {
+            nextAudio.pause();
+            return;
           }
 
-          if (progress >= 1) {
-            if (this.fadeInterval) clearInterval(this.fadeInterval);
-            this.fadeInterval = null;
-            currentAudio.pause();
-            currentAudio.currentTime = 0;
-            nextAudio.volume = targetVol;
+          if (this.slowTimer) {
+            clearTimeout(this.slowTimer);
+            this.slowTimer = null;
           }
-        }, fadeIntervalTime);
-      })
-      .catch((err) => {
-        console.warn('[previewPlayer] Playback rejected:', err);
-        this.handleTrackError();
-      });
+          if (this.fallbackTimeout) {
+            clearTimeout(this.fallbackTimeout);
+            this.fallbackTimeout = null;
+          }
+
+          this.activeItem = poolItem;
+          this.state.isLoadingSlow = false;
+          this.state.isPlaying = true;
+          this.state.isPaused = false;
+          this.state.currentTrack = track;
+          this.state.currentArtist = artist;
+          this.state.currentBlobId = blobId;
+          this.state.statusMessage = null;
+          this.emit();
+
+          // Smoothly ramp next up
+          this.rampVolume(nextAudio, targetVol, AUDIO_CONFIG.FADE_IN_MS);
+
+          // Smoothly ramp previous down and pause
+          if (previousAudio && previousAudio !== nextAudio && !previousAudio.paused) {
+            this.rampVolume(previousAudio, 0, AUDIO_CONFIG.FADE_OUT_MS, () => {
+              previousAudio.pause();
+              previousAudio.currentTime = 0;
+            });
+          }
+        })
+        .catch((err) => {
+          audioLog('play() result', {
+            status: 'error',
+            name: err.name,
+            message: err.message,
+          });
+          if (err.name === 'AbortError' || err.name === 'NotAllowedError') {
+            return;
+          }
+          this.handleTrackError(artist, blobId, track);
+        });
+    }
   }
 
   /**
    * Fade out and pause current track
    */
   public fadeOutAndPause(durationMs: number = AUDIO_CONFIG.FADE_OUT_MS) {
-    if (this.fadeInterval) {
-      clearInterval(this.fadeInterval);
-      this.fadeInterval = null;
+    if (this.hoverTimer) {
+      clearTimeout(this.hoverTimer);
+      this.hoverTimer = null;
     }
+    if (this.slowTimer) {
+      clearTimeout(this.slowTimer);
+      this.slowTimer = null;
+    }
+    if (this.fallbackTimeout) {
+      clearTimeout(this.fallbackTimeout);
+      this.fallbackTimeout = null;
+    }
+    this.state.isLoadingSlow = false;
 
-    const currentAudio = this.activeChannel === 'A' ? this.audioA : this.audioB;
-    if (currentAudio.paused) {
+    const currentAudio = this.activeItem?.audio;
+    if (!currentAudio || currentAudio.paused) {
       this.state.isPlaying = false;
       this.state.isPaused = true;
       this.emit();
       return;
     }
 
-    const steps = 12;
-    const intervalTime = durationMs / steps;
-    const initialVol = currentAudio.volume;
-    let step = 0;
-
-    this.fadeInterval = window.setInterval(() => {
-      step++;
-      const progress = Math.min(1, step / steps);
-      currentAudio.volume = Math.max(0, initialVol * (1 - progress));
-
-      if (progress >= 1) {
-        if (this.fadeInterval) clearInterval(this.fadeInterval);
-        this.fadeInterval = null;
-        currentAudio.pause();
-        this.state.isPlaying = false;
-        this.state.isPaused = true;
-        this.emit();
-      }
-    }, intervalTime);
+    this.rampVolume(currentAudio, 0, durationMs, () => {
+      currentAudio.pause();
+      this.state.isPlaying = false;
+      this.state.isPaused = true;
+      this.emit();
+    });
   }
 
   private pauseImmediate() {
-    this.audioA.pause();
-    this.audioB.pause();
+    if (this.activeItem) {
+      this.activeItem.audio.pause();
+    }
     this.state.isPlaying = false;
     this.state.isPaused = true;
     this.emit();
   }
 
   public resume() {
-    const activeAudio = this.activeChannel === 'A' ? this.audioA : this.audioB;
-    if (this.state.currentTrack && activeAudio.src) {
-      activeAudio.volume = this.state.isMuted ? 0 : this.state.volume;
-      activeAudio
+    if (this.activeItem && this.state.currentTrack && this.activeItem.audio.src) {
+      const audio = this.activeItem.audio;
+      audio.volume = this.state.isMuted ? 0 : this.state.volume;
+      audio
         .play()
         .then(() => {
           this.state.isPlaying = true;
@@ -397,9 +706,8 @@ class PreviewPlayerEngine {
   public setVolume(volume: number) {
     const clamped = Math.max(0, Math.min(1, volume));
     this.state.volume = clamped;
-    const currentAudio = this.activeChannel === 'A' ? this.audioA : this.audioB;
-    if (!this.state.isMuted) {
-      currentAudio.volume = clamped;
+    if (this.activeItem && !this.state.isMuted) {
+      this.activeItem.audio.volume = clamped;
     }
     this.emit();
   }
@@ -407,8 +715,9 @@ class PreviewPlayerEngine {
   public toggleMute() {
     const newMuted = !this.state.isMuted;
     this.state.isMuted = newMuted;
-    const currentAudio = this.activeChannel === 'A' ? this.audioA : this.audioB;
-    currentAudio.volume = newMuted ? 0 : this.state.volume;
+    if (this.activeItem) {
+      this.activeItem.audio.volume = newMuted ? 0 : this.state.volume;
+    }
     this.emit();
   }
 
@@ -426,7 +735,6 @@ class PreviewPlayerEngine {
     } else {
       if (this.wasPlayingBeforeDrag) {
         this.wasPlayingBeforeDrag = false;
-        // Resume if we have an active panel or selection
       }
     }
   }
@@ -443,7 +751,14 @@ class PreviewPlayerEngine {
       const candidate = tracks[idx];
       if (onlyClean && candidate.explicit) continue;
       if (candidate.previewUrl) {
-        this.crossfadeToTrack(this.state.currentArtist, candidate, this.state.currentBlobId || 'manual');
+        const poolItem = this.acquireAudio(candidate.previewUrl);
+        this.crossfadeToPoolItem(
+          poolItem,
+          this.state.currentArtist,
+          candidate,
+          this.state.currentBlobId || 'manual',
+          ++this.hoverGen
+        );
         return;
       }
     }
@@ -461,7 +776,14 @@ class PreviewPlayerEngine {
       const candidate = tracks[idx];
       if (onlyClean && candidate.explicit) continue;
       if (candidate.previewUrl) {
-        this.crossfadeToTrack(this.state.currentArtist, candidate, this.state.currentBlobId || 'manual');
+        const poolItem = this.acquireAudio(candidate.previewUrl);
+        this.crossfadeToPoolItem(
+          poolItem,
+          this.state.currentArtist,
+          candidate,
+          this.state.currentBlobId || 'manual',
+          ++this.hoverGen
+        );
         return;
       }
     }
@@ -472,25 +794,31 @@ class PreviewPlayerEngine {
     this.nextTrack(true);
   }
 
-  private handleTrackError() {
-    // If a preview fails, try artist's next song, then show "Open on Apple Music". Never throw.
-    if (!this.state.currentArtist || !this.state.currentArtist.topTracks) {
+  private handleTrackError(artist?: Artist, blobId?: string, failedTrack?: TopTrack) {
+    const art = artist || this.state.currentArtist;
+    const bId = blobId || this.state.currentBlobId;
+    const currentRank = (failedTrack || this.state.currentTrack)?.rank ?? 0;
+
+    if (!art || !art.topTracks) {
       this.state.statusMessage = 'Open on Apple Music';
       this.state.isPlaying = false;
+      this.state.isLoadingSlow = false;
       this.emit();
       return;
     }
 
-    const currentRank = this.state.currentTrack?.rank ?? 0;
-    const remaining = this.state.currentArtist.topTracks.filter(
+    const remaining = art.topTracks.filter(
       (t) => t.rank > currentRank && !t.explicit && Boolean(t.previewUrl)
     );
 
     if (remaining.length > 0) {
-      this.crossfadeToTrack(this.state.currentArtist, remaining[0], this.state.currentBlobId || 'fallback');
+      audioLog('trying next track fallback', { track: remaining[0].title });
+      const poolItem = this.acquireAudio(remaining[0].previewUrl);
+      this.crossfadeToPoolItem(poolItem, art, remaining[0], bId || 'fallback', this.hoverGen);
     } else {
       this.state.statusMessage = 'Preview unavailable. Open on Apple Music';
       this.state.isPlaying = false;
+      this.state.isLoadingSlow = false;
       this.emit();
     }
   }

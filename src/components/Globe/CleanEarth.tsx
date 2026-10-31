@@ -6,6 +6,7 @@ import { OpaqueClouds } from './OpaqueClouds';
 
 interface CleanEarthProps {
   radius?: number;
+  onDeselect?: () => void;
 }
 
 /**
@@ -16,6 +17,7 @@ interface CleanEarthProps {
  */
 export const CleanEarth: FC<CleanEarthProps> = ({
   radius = EARTH_CONFIG.PLANET_RADIUS,
+  onDeselect,
 }) => {
   const earthMeshRef = useRef<THREE.Mesh>(null);
 
@@ -61,6 +63,10 @@ export const CleanEarth: FC<CleanEarthProps> = ({
         material={earthMaterial}
         receiveShadow
         castShadow
+        onClick={(e) => {
+          e.stopPropagation();
+          onDeselect?.();
+        }}
       />
 
       {/* 2. Solid Dark-Blue Inverted-Hull Cartoon Outline (scale 1.018, BackSide) */}

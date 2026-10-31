@@ -1,4 +1,4 @@
-import { useMemo, useState, type FC } from 'react';
+import { useMemo, useState, useRef, useCallback, type FC } from 'react';
 import * as THREE from 'three';
 import type { BlobInstanceData } from '../../types';
 import { MochiBlob } from '../Blob/MochiBlob';
@@ -8,6 +8,7 @@ interface BlobsLayerProps {
   selectedBlob: BlobInstanceData | null;
   playingBlobId?: string | null;
   trendAvailable?: boolean;
+  isInteracting?: boolean;
   onSelectBlob: (blob: BlobInstanceData) => void;
   onHoverBlob: (blob: BlobInstanceData | null) => void;
   debug?: boolean;
@@ -18,11 +19,46 @@ export const BlobsLayer: FC<BlobsLayerProps> = ({
   selectedBlob,
   playingBlobId = null,
   trendAvailable = false,
+  isInteracting = false,
   onSelectBlob,
   onHoverBlob,
   debug = false,
 }) => {
   const [hoveredBlobId, setHoveredBlobId] = useState<string | null>(null);
+  const leaveTimerRef = useRef<number | null>(null);
+
+  const handleHoverStart = useCallback(
+    (blob: BlobInstanceData) => {
+      if (isInteracting) return;
+      if (leaveTimerRef.current) {
+        clearTimeout(leaveTimerRef.current);
+        leaveTimerRef.current = null;
+      }
+      setHoveredBlobId(blob.id);
+      onHoverBlob(blob);
+    },
+    [isInteracting, onHoverBlob]
+  );
+
+  const handleHoverEnd = useCallback(
+    (blobId: string) => {
+      if (leaveTimerRef.current) {
+        clearTimeout(leaveTimerRef.current);
+      }
+      // 80ms hysteresis prevents hover drop across micro-movements or seams
+      leaveTimerRef.current = window.setTimeout(() => {
+        setHoveredBlobId((cur) => {
+          if (cur === blobId) {
+            onHoverBlob(null);
+            return null;
+          }
+          return cur;
+        });
+        leaveTimerRef.current = null;
+      }, 80);
+    },
+    [onHoverBlob]
+  );
 
   const hoveredCountryCode = useMemo(() => {
     if (!hoveredBlobId) return null;
@@ -89,14 +125,8 @@ export const BlobsLayer: FC<BlobsLayerProps> = ({
           )}
           trendAvailable={trendAvailable}
           onSelect={() => onSelectBlob(blob)}
-          onHoverStart={() => {
-            setHoveredBlobId(blob.id);
-            onHoverBlob(blob);
-          }}
-          onHoverEnd={() => {
-            setHoveredBlobId(null);
-            onHoverBlob(null);
-          }}
+          onHoverStart={() => handleHoverStart(blob)}
+          onHoverEnd={() => handleHoverEnd(blob.id)}
         />
       ))}
 
