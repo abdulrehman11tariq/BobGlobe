@@ -45,7 +45,7 @@ export const BlobsLayer: FC<BlobsLayerProps> = ({
       if (leaveTimerRef.current) {
         clearTimeout(leaveTimerRef.current);
       }
-      // 80ms hysteresis prevents hover drop across micro-movements or seams
+      // 50ms hysteresis prevents hover drop across micro-movements or seams
       leaveTimerRef.current = window.setTimeout(() => {
         setHoveredBlobId((cur) => {
           if (cur === blobId) {
@@ -55,7 +55,7 @@ export const BlobsLayer: FC<BlobsLayerProps> = ({
           return cur;
         });
         leaveTimerRef.current = null;
-      }, 80);
+      }, 50);
     },
     [onHoverBlob]
   );

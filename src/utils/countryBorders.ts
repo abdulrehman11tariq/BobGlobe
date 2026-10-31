@@ -133,3 +133,19 @@ export function getCountryBorderLines(countryCode: string): CountryBorderData | 
   borderCache.set(countryCode, borderData);
   return borderData;
 }
+
+/**
+ * Pre-warms the border cache in the background for all countries in country_borders.json.
+ * Running this once during startup ensures every country outline renders with 0ms delay.
+ */
+export function warmUpBorderCache(): void {
+  const codes = Object.keys(bordersRecord);
+  for (const code of codes) {
+    if (!borderCache.has(code)) {
+      const data = buildCountryBorderData(code);
+      if (data) {
+        borderCache.set(code, data);
+      }
+    }
+  }
+}

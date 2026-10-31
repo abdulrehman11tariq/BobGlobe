@@ -56,6 +56,7 @@ class PreviewPlayerEngine {
   private activeItem: PoolItem | null = null;
 
   private hoverGen = 0;
+  private earlyLoadTimer: number | null = null;
   private hoverTimer: number | null = null;
   private slowTimer: number | null = null;
   private fallbackTimeout: number | null = null;
@@ -448,6 +449,10 @@ class PreviewPlayerEngine {
   public hoverBlob(artist: Artist | null, blobId: string | null) {
     const gen = ++this.hoverGen;
 
+    if (this.earlyLoadTimer) {
+      clearTimeout(this.earlyLoadTimer);
+      this.earlyLoadTimer = null;
+    }
     if (this.hoverTimer) {
       clearTimeout(this.hoverTimer);
       this.hoverTimer = null;
@@ -495,12 +500,16 @@ class PreviewPlayerEngine {
       return;
     }
 
-    // Early loading: Acquire from pool and start loading IMMEDIATELY
-    const poolItem = this.acquireAudio(cleanTrack.previewUrl);
-    audioLog('audio element created and src set', {
-      poolIndex: poolItem.index,
-      src: cleanTrack.previewUrl,
-    });
+    let poolItem: PoolItem | null = null;
+    // Early loading starts after 40ms so momentary sweeps (5-15ms) across blobs don't allocate audio
+    this.earlyLoadTimer = window.setTimeout(() => {
+      if (this.hoverGen !== gen) return;
+      poolItem = this.acquireAudio(cleanTrack.previewUrl);
+      audioLog('audio element created and src set', {
+        poolIndex: poolItem.index,
+        src: cleanTrack.previewUrl,
+      });
+    }, 40);
 
     // 600ms loading indicator timer
     this.slowTimer = window.setTimeout(() => {
@@ -534,7 +543,8 @@ class PreviewPlayerEngine {
         return;
       }
 
-      this.crossfadeToPoolItem(poolItem, artist, cleanTrack, blobId, gen);
+      const itemToPlay = poolItem || this.acquireAudio(cleanTrack.previewUrl);
+      this.crossfadeToPoolItem(itemToPlay, artist, cleanTrack, blobId, gen);
     }, AUDIO_CONFIG.HOVER_DELAY_MS);
   }
 
@@ -641,6 +651,10 @@ class PreviewPlayerEngine {
    * Fade out and pause current track
    */
   public fadeOutAndPause(durationMs: number = AUDIO_CONFIG.FADE_OUT_MS) {
+    if (this.earlyLoadTimer) {
+      clearTimeout(this.earlyLoadTimer);
+      this.earlyLoadTimer = null;
+    }
     if (this.hoverTimer) {
       clearTimeout(this.hoverTimer);
       this.hoverTimer = null;

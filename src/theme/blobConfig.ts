@@ -54,9 +54,9 @@ export const BORDER_OUTLINE_CONFIG = {
   NAVY_OFFSET: 0.010,          // Surface radius + 0.010
   WHITE_OFFSET: 0.009,         // Surface radius + 0.009 (underneath navy)
   DENSIFY_MAX_STEP_DEG: 0.5,   // Maximum degree step for segment densification
-  POP_IN_DURATION_MS: 150,     // Pop-in animation duration in ms (no transparency)
-  LEAVE_DELAY_MS: 100,         // Delay before hiding after pointer leaves blobs
-  CACHE_MAX_COUNTRIES: 8,      // Maximum pre-built country borders cached
+  POP_IN_DURATION_MS: 0,       // Instant flush display (no underground lag)
+  LEAVE_DELAY_MS: 50,          // Snappy delay before hiding outline
+  CACHE_MAX_COUNTRIES: 150,    // Cache all 136 countries permanently in memory
 } as const;
 
 /**

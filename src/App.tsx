@@ -17,6 +17,7 @@ import { usePreviewPlayer } from './hooks/usePreviewPlayer';
 import { computeGlobalBlobLayout } from './utils/blobPlacement';
 import { loadLandMask, isLandMaskReady } from './utils/terrainSampler';
 import { loadCountryIdMask, isCountryIdMaskReady } from './utils/countryIdSampler';
+import { warmUpBorderCache } from './utils/countryBorders';
 import { runLandmarkStartupCheck } from './utils/landmarkCheck';
 import { runElevationAudit } from './utils/elevationAudit';
 import { preloadImage } from './utils/imageCache';
@@ -70,6 +71,7 @@ export function App() {
   useEffect(() => {
     Promise.all([loadLandMask(), loadCountryIdMask()]).then(() => {
       setMasksReady(true);
+      warmUpBorderCache();
     });
   }, []);
 
@@ -264,17 +266,30 @@ export function App() {
     controlsRef.current?.resetCamera();
   }, [handleSelectBlob]);
 
-  // Hover Handler: connects 350ms hover delay audio playback & preloads same-country previews
+  const preloadDebounceRef = useRef<number | null>(null);
+
+  // Hover Handler: connects 350ms hover delay audio playback & debounced country preloads
   const handleHoverBlob = useCallback(
     (blob: BlobInstanceData | null) => {
       if (isInteracting || isCameraFlying) return;
       setHoveredBlob(blob);
+
+      if (preloadDebounceRef.current) {
+        clearTimeout(preloadDebounceRef.current);
+        preloadDebounceRef.current = null;
+      }
+
       if (blob) {
         player.hoverBlob(blob.artist, blob.id);
-        const sameCountryBlobs = allBlobs.filter(
-          (b) => b.country.code === blob.country.code && b.id !== blob.id
-        );
-        player.preloadCountryPreviews(sameCountryBlobs);
+        // Only preload neighboring songs if cursor rests on blob for >= 100ms
+        // Fast mouse sweeps bypass heavy audio preloading completely
+        preloadDebounceRef.current = window.setTimeout(() => {
+          const sameCountryBlobs = allBlobs.filter(
+            (b) => b.country.code === blob.country.code && b.id !== blob.id
+          );
+          player.preloadCountryPreviews(sameCountryBlobs);
+          preloadDebounceRef.current = null;
+        }, 100);
       } else {
         player.hoverBlob(null, null);
       }
