@@ -12,6 +12,7 @@ import { AudioControlsBar } from './components/UI/AudioControlsBar';
 import { SearchBar } from './components/UI/SearchBar';
 import { GlobalTopPanel } from './components/UI/GlobalTopPanel';
 import { BlobDebugPage } from './pages/BlobDebugPage';
+import { ThumbnailGeneratorPage } from './pages/ThumbnailGeneratorPage';
 import { useGlobeData } from './hooks/useGlobeData';
 import { usePreviewPlayer } from './hooks/usePreviewPlayer';
 import { computeGlobalBlobLayout } from './utils/blobPlacement';
@@ -73,11 +74,20 @@ export function App() {
     }
   }, [hoveredBlob, selectedBlob, isInteracting]);
 
-  // Check if initial route is /debug/blob
+  // Check if initial route is /debug/blob or /thumbnail (DEV only)
   const [isDebugBlobStudio, setIsDebugBlobStudio] = useState<boolean>(() => {
+    if (!import.meta.env.DEV) return false;
     return (
       window.location.pathname.includes('/debug/blob') ||
       window.location.search.includes('preview=blob')
+    );
+  });
+
+  const [isThumbnailStudio, setIsThumbnailStudio] = useState<boolean>(() => {
+    if (!import.meta.env.DEV) return false;
+    return (
+      window.location.pathname.includes('/thumbnail') ||
+      window.location.search.includes('preview=thumbnail')
     );
   });
 
@@ -179,11 +189,11 @@ export function App() {
         setSelectedBlob(null);
         setIsAboutOpen(false);
         setIsGlobalTopOpen(false);
-      } else if (e.key === 'd' || e.key === 'D') {
+      } else if (import.meta.env.DEV && (e.key === 'd' || e.key === 'D')) {
         setDebug((prev) => !prev);
-      } else if (e.key === 'm' || e.key === 'M') {
+      } else if (import.meta.env.DEV && (e.key === 'm' || e.key === 'M')) {
         setShowMarkers((prev) => !prev);
-      } else if (e.key === 'g' || e.key === 'G') {
+      } else if (import.meta.env.DEV && (e.key === 'g' || e.key === 'G')) {
         const results = runElevationAudit(allBlobs);
         const pass = results.length > 0 && results.every((r) => r.passed);
         setAuditMessage(
@@ -239,7 +249,18 @@ export function App() {
     [player]
   );
 
-  if (isDebugBlobStudio) {
+  if (import.meta.env.DEV && isThumbnailStudio) {
+    return (
+      <ThumbnailGeneratorPage
+        onReturnToGlobe={() => {
+          setIsThumbnailStudio(false);
+          window.history.pushState({}, '', '/');
+        }}
+      />
+    );
+  }
+
+  if (import.meta.env.DEV && isDebugBlobStudio) {
     return (
       <BlobDebugPage
         onReturnToGlobe={() => {
@@ -277,10 +298,14 @@ export function App() {
         }
         totalCountries={data?.countries.length || 116}
         updatedAt={updatedAt}
-        onOpenStudio={() => {
-          setIsDebugBlobStudio(true);
-          window.history.pushState({}, '', '/debug/blob');
-        }}
+        onOpenStudio={
+          import.meta.env.DEV
+            ? () => {
+                setIsDebugBlobStudio(true);
+                window.history.pushState({}, '', '/debug/blob');
+              }
+            : undefined
+        }
         onOpenAbout={() => setIsAboutOpen(true)}
         onOpenGlobalTop={() => setIsGlobalTopOpen((prev) => !prev)}
       >
@@ -312,7 +337,7 @@ export function App() {
       />
 
       {/* Hover Card (Round photo, flag, songs in chart, equalizer & progress) */}
-      <BlobTooltip blob={hoveredBlob} trendAvailable={trendAvailable} />
+      <BlobTooltip blob={selectedBlob ? null : hoveredBlob} trendAvailable={trendAvailable} />
 
       {/* Selected Artist Detail Panel */}
       <ArtistPanel
@@ -326,23 +351,25 @@ export function App() {
       {/* Fixed Audio Controls Bar (Mute + Volume Slider + Status) */}
       <AudioControlsBar />
 
-      {/* Debug Info Overlay (Toggle with 'D') */}
-      <DebugOverlay
-        enabled={debug}
-        blobCount={allBlobs.length}
-        countryCount={data?.countries.length || 0}
-      />
+      {/* Debug Info Overlay (Toggle with 'D' in DEV) */}
+      {import.meta.env.DEV && (
+        <DebugOverlay
+          enabled={debug}
+          blobCount={allBlobs.length}
+          countryCount={data?.countries.length || 0}
+        />
+      )}
 
-      {/* Debug Marker Mode Indicator (Toggle with 'M') */}
-      {showMarkers && (
+      {/* Debug Marker Mode Indicator (Toggle with 'M' in DEV) */}
+      {import.meta.env.DEV && showMarkers && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-full bg-neutral-900/90 text-yellow-300 border border-yellow-400/50 shadow-xl text-xs font-mono font-semibold flex items-center gap-2 animate-pulse">
           <span>📍 Country Coordinates Active</span>
           <span className="text-[10px] text-neutral-400">(Press M to hide)</span>
         </div>
       )}
 
-      {/* Elevation Audit Toast Indicator (Toggle with 'G') */}
-      {auditMessage && (
+      {/* Elevation Audit Toast Indicator (Toggle with 'G' in DEV) */}
+      {import.meta.env.DEV && auditMessage && (
         <div className="fixed top-28 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-neutral-900/95 text-emerald-300 border border-emerald-400/50 shadow-2xl text-xs font-mono font-semibold flex items-center gap-2">
           <span>{auditMessage}</span>
           <span className="text-[10px] text-neutral-400">(logged to console)</span>
@@ -360,8 +387,8 @@ export function App() {
         onSelectBlob={handleSelectBlob}
         onHoverBlob={handleHoverBlob}
         activeOutlineCountry={activeOutlineCountry}
-        debug={debug}
-        showMarkers={showMarkers}
+        debug={import.meta.env.DEV ? debug : false}
+        showMarkers={import.meta.env.DEV ? showMarkers : false}
         onInteractionStart={handleInteractionStart}
         onInteractionEnd={handleInteractionEnd}
       />

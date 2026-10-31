@@ -26,6 +26,10 @@ interface SceneProps {
   children?: ReactNode;
 }
 
+const isTouchDevice =
+  typeof window !== 'undefined' &&
+  ('ontouchstart' in window || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0));
+
 export const Scene = forwardRef<ControlsHandle, SceneProps>(
   (
     {
@@ -59,7 +63,7 @@ export const Scene = forwardRef<ControlsHandle, SceneProps>(
             alpha: false,
             powerPreference: 'high-performance',
           }}
-          dpr={[1, 2]}
+          dpr={[1, isTouchDevice ? 1.5 : 2]}
         >
           {/* Planetary Sun Directional Lighting */}
           <directionalLight

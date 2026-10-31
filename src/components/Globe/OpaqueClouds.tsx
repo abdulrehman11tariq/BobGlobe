@@ -119,8 +119,7 @@ export const OpaqueClouds: FC = () => {
         const d = cloudsData[idx];
         // Orbit around Earth center
         const angle = t * d.orbitSpeed;
-        const rotatedPos = d.basePos.clone().applyAxisAngle(d.orbitAxis, angle);
-        mesh.position.copy(rotatedPos);
+        mesh.position.copy(d.basePos).applyAxisAngle(d.orbitAxis, angle);
 
         // Align tangent to sphere surface
         mesh.lookAt(0, 0, 0);

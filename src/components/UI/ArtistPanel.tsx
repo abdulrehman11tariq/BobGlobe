@@ -129,10 +129,10 @@ export const ArtistPanel: FC<ArtistPanelProps> = ({
   };
 
   return (
-    <div className="fixed top-20 right-6 z-40 w-84 max-w-[92vw] max-h-[85vh] overflow-y-auto animate-in fade-in slide-in-from-right-8 duration-200">
+    <div className="fixed top-[108px] sm:top-20 right-3 sm:right-6 left-3 sm:left-auto z-40 sm:w-84 max-h-[calc(100vh-125px)] sm:max-h-[85vh] overflow-y-auto rounded-3xl shadow-2xl animate-in fade-in slide-in-from-right-8 duration-200">
       <div className="glass-panel p-5 rounded-3xl shadow-2xl border border-white/20 flex flex-col gap-4 text-slate-100">
-        {/* Header with Photo & Close Button */}
-        <div className="flex items-start justify-between gap-3">
+        {/* Header with Photo & Close Button (sticky so close button is always reachable on phones) */}
+        <div className="sticky top-0 z-20 -m-5 mb-0 p-5 bg-slate-950/95 backdrop-blur-md border-b border-white/10 rounded-t-3xl flex items-start justify-between gap-3 shadow-md">
           <div className="flex items-center gap-3 min-w-0">
             {/* Bigger Artist Photo */}
             <div

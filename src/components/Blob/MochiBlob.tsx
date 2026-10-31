@@ -9,6 +9,10 @@ import { getFaceTexture, type BlobExpression, type CheekMark } from './FaceTextu
 import { Accessory, type AccessoryType } from './Accessories';
 import { createMochiGeometry, createFaceShellGeometry } from './MochiGeometry';
 
+// Reusable scratch objects to eliminate per-frame GC allocations
+const _scratchCamPosLocal = new THREE.Vector3();
+const _scratchBlobWorldPos = new THREE.Vector3();
+
 interface MochiBlobProps {
   blob: BlobInstanceData;
   isSelected: boolean;
@@ -321,8 +325,9 @@ export const MochiBlob: FC<MochiBlobProps> = ({
 
     // 5. Billboard-ish Head/Face rotation: turns towards camera around up-axis (limited to ~70 deg)
     if (faceGroupRef.current && rootGroupRef.current) {
-      const camPosLocal = rootGroupRef.current.worldToLocal(camera.position.clone());
-      let targetAngle = Math.atan2(camPosLocal.x, camPosLocal.z);
+      _scratchCamPosLocal.copy(camera.position);
+      rootGroupRef.current.worldToLocal(_scratchCamPosLocal);
+      let targetAngle = Math.atan2(_scratchCamPosLocal.x, _scratchCamPosLocal.z);
       targetAngle = Math.max(
         -MOCHI_CONFIG.MAX_HEAD_TURN_RAD,
         Math.min(MOCHI_CONFIG.MAX_HEAD_TURN_RAD, targetAngle)
@@ -330,14 +335,14 @@ export const MochiBlob: FC<MochiBlobProps> = ({
       easing.damp(faceGroupRef.current.rotation, 'y', targetAngle, 0.2, delta);
 
       // Subtle pupil shift toward camera
-      lookShift.current.x = THREE.MathUtils.clamp(camPosLocal.x * 0.15, -0.8, 0.8);
-      lookShift.current.y = THREE.MathUtils.clamp(camPosLocal.y * 0.15, -0.6, 0.6);
+      lookShift.current.x = THREE.MathUtils.clamp(_scratchCamPosLocal.x * 0.15, -0.8, 0.8);
+      lookShift.current.y = THREE.MathUtils.clamp(_scratchCamPosLocal.y * 0.15, -0.6, 0.6);
     }
 
     // 6. Distance Level of Detail (LOD): Enlarge face up to 1.4x at planetary camera distances
     if (faceMeshRef.current && rootGroupRef.current) {
-      const worldPos = new THREE.Vector3(...blob.position);
-      const camDist = camera.position.distanceTo(worldPos);
+      _scratchBlobWorldPos.set(blob.position[0], blob.position[1], blob.position[2]);
+      const camDist = camera.position.distanceTo(_scratchBlobWorldPos);
 
       // Scale face up smoothly as camera zooms out so eyes stay bold and readable
       let lodScale = 1.0;

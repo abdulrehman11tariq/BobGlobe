@@ -1,109 +1,172 @@
-# 🌍 BobGlobe | 3D Music World (Next Byte Hacks V5)
+# 🌍 BobGlobe — Every Country's Top Artists, as Cute Blobs
 
-> An explorable 3D planet where adorable kawaii mochi creatures represent the most-listened artists per country, set on a clean, soft, premium Earth with real continent geography, friendly pastel biomes, gentle mountain relief, soft clouds, and a cozy gradient space background.
+<p align="center">
+  <img src="public/brand/thumbnail-1500x1000.png" alt="BobGlobe Thumbnail" width="750" />
+</p>
 
----
+> **BobGlobe** is an interactive, tactile 3D globe where every country's most popular musical artists come alive as expressive, kawaii mochi creatures standing directly on a stylized cartoon Earth. Powered by nightly Apple Music country charts and enriched with Deezer artist photos, iTunes 30-second audio previews, and deterministic spatial placement, BobGlobe transforms dry music charts into an enchanting, explorable musical planet.
 
-## 🎨 Visual Philosophy: Clean, Soft, Premium
-
-- **Clean, Soft Earth**:
-  - Smooth high-segment sphere ($256\times256$) with accurate continental geography.
-  - Procedural soft biome palette: fresh temperate green, deep tropical emerald, warm desert sand, pale subpolar sage, and white-blue polar snow.
-  - Gentle coastal turquoise transitions with a subtle light-blue shore foam line.
-  - Soft mountain relief using normal maps at low strength ($0.35$) and gentle vertex displacement ($0.038$) — no harsh bumps.
-- **Lighting & Atmosphere**:
-  - Warm sun key light with strong hemisphere/ambient fill: **NO black night side**. Shaded regions settle into a calm, tranquil blue-gray (`#223247`).
-  - Thin, clean atmospheric Fresnel glow in soft light-blue/cyan (`#67e8f9`).
-- **Soft Cloud Sphere**:
-  - Semi-transparent white clouds floating above the surface with calm, gentle drift.
-  - Fades out automatically when the camera zooms in close to the surface so ground detail and blobs are never obscured.
-- **Cozy Space Backdrop**:
-  - Gradient space dome from deep cozy indigo (`#090d20`) to dusty teal/blue (`#162842`) behind the planet.
-  - Sparse twinkling stars ($1,400$) and 7 faint floating camera dust/sparkle particles for cozy cinematic depth.
-- **Kawaii Mochi Blobs (The Star of the Show)**:
-  - Big, glossy black anime eyes ($0.22W \times 0.28W$) with dual sparkle highlights, blue iris glow, and soft pink blush.
-  - Unlit `MeshBasicMaterial` faces that are always bright and clear from any angle.
-  - Distance LOD enlarging faces up to $1.4\times$ from orbit.
-  - 8 personality accessories + royal golden crowns for each country's #1 artist.
-  - Jelly squash-and-stretch breathing, random blinks, and bouncy boing physics.
+🔗 **Live Demo**: [LIVE_DEMO_URL](https://abdulrehman11tariq.github.io/BobGlobe/)
 
 ---
 
-## 🎛️ Tunable Constants Quick Reference
+## ✨ Features (What Exists Today)
 
-### Earth Parameters (`src/theme/earthConfig.ts`)
-
-| Constant | Value | Description |
-| :--- | :--- | :--- |
-| `PLANET_RADIUS` | `2.5` | Base radius of the Earth sphere |
-| `SPHERE_SEGMENTS` | `256` | Smooth sphere subdivision ($256\times256$) |
-| `RELIEF_NORMAL_STRENGTH` | `0.35` | Soft mountain normal relief strength |
-| `DISPLACEMENT_SCALE` | `0.038` | Gentle vertex displacement scale (max 1.5x) |
-| `biomes.oceanDeep` | `#184e68` | Deep soft teal-blue ocean |
-| `biomes.oceanShallow` | `#2298a4` | Coastal turquoise |
-| `biomes.oceanReef` | `#2dd4bf` | Shore reef turquoise |
-| `biomes.shoreFoam` | `#a5f3fc` | Gentle light-blue foam line along coasts |
-| `biomes.temperateGreen` | `#4ade80` | Fresh temperate meadow green |
-| `biomes.tropicalGreen` | `#2e8b57` | Lush tropical emerald |
-| `biomes.desertSand` | `#eab366` | Warm golden desert sand |
-| `biomes.tundraSage` | `#94b89a` | Pale sage subpolar tundra |
-| `biomes.polarSnow` | `#f0f9ff` | Polar ice and mountain snow |
-| `biomes.shadeFloor` | `#223247` | Soft blue-gray floor (NO black night side!) |
-| `atmosphere.color` | `#67e8f9` | Thin clean cyan rim glow |
-| `atmosphere.strength` | `0.95` | Atmospheric rim radiance multiplier |
-| `atmosphere.power` | `3.4` | Falloff exponent of the atmospheric rim |
-| `clouds.opacity` | `0.38` | Soft cloud transparency |
-| `clouds.speed` | `0.008` | Calm cloud drift speed |
-| `clouds.fadeNearDist` | `3.8` | Distance where clouds begin fading out on zoom-in |
-| `space.gradientTop` | `#090d20` | Cozy deep indigo at top of space dome |
-| `space.gradientHorizon` | `#162842` | Dusty teal/blue behind the planet |
-| `space.starCount` | `1400` | Sparse field of small twinkling stars |
-| `space.dustParticleCount` | `7` | Faint camera dust/sparkle particles |
+- **Expressive 3D Kawaii Blobs**: Procedurally modeled mochi blobs with cartoon facial expressions, directional head turns toward the camera, cute accessories (crowns for #1 artists, sprout leaves, cat ears, antennas, bows, caps), and idle breathing and boing spring animations.
+- **100% Opaque & Crisp 3D Aesthetics**: High-performance, zero-transparency rendering featuring cartoon terrain textures, stylized 3D land relief, cartoon orbiting cloud clusters, and a cozy gradient space dome with twinkling white stars.
+- **Accurate Geographic Scatter**: Deterministic seeded layout algorithm with a 17-point footprint check ensuring every artist blob stands firmly on its home country's land without drifting into oceans or across borders.
+- **Hover & Tap Audio Previews**: Non-intrusive 30-second AAC audio previews fade in after a 350ms rest on desktop or tap on mobile, complete with live synchronized 100 BPM equalizer bars and progress indicators.
+- **Artist Detail Panel & Apple Music Deep Links**: Tap any artist blob to open a rich side panel featuring country rank, Apple Music top tracks with individual play/pause toggles, genre chips, and direct links to Apple Music and Deezer profiles.
+- **Global Search & "Surprise Me" Explorer**: Instantly search across all 116 countries and 580 artists with keyboard navigation (`ArrowUp`, `ArrowDown`, `Enter`), or let the "Surprise Me" button fly the camera to a random country's top artist.
+- **Global Top 10 Chart**: Dedicated leaderboard showcasing the overall top 10 artists worldwide based on cross-country chart dominance.
+- **Deep Linking Support**: Share direct URLs containing `?artist=<id>` or `?country=<ISO>` to open the globe focused directly on any artist or country.
+- **Zero-Key Public Data Pipeline**: Automated nightly scraping of public Apple Music RSS feeds and Deezer APIs without requiring third-party API keys.
 
 ---
 
-## 🛠️ Local Development
+## 🏗️ How It Works (Architecture)
 
+```mermaid
+flowchart TD
+    subgraph Data Pipeline [Nightly GitHub Action - 02:00 UTC]
+        A["Apple Music Public RSS Feeds<br/>(136 Countries, Top 100 Songs)"] --> B["scripts/fetchData.mjs"]
+        C["iTunes Search API<br/>(Track Previews & Clean Names)"] --> B
+        D["Deezer Public API<br/>(High-Res Artist Photos)"] --> B
+        B --> E["public/data/latest.json<br/>(580 Artists Across 116 Countries)"]
+        B --> F["public/data/history/YYYY-MM-DD.json<br/>(Daily Snapshots, 30-Day Pruning)"]
+    end
+
+    subgraph BobGlobe Frontend [React + Three.js / R3F]
+        E --> G["useGlobeData Hook"]
+        G --> H["Deterministic Scatter Engine<br/>(17-Point Land Mask Footprint Check)"]
+        H --> I["React Three Fiber 3D Scene"]
+        I --> J["CleanEarth + Opaque Clouds + BlobsLayer"]
+        I --> K["Audio Engine (HTML5 Web Audio Preview Player)"]
+        I --> L["UI Overlays (Search, Tooltip, Artist Panel)"]
+    end
+```
+
+---
+
+## 📊 How the Data Works
+
+### 1. Scoring & Blob Sizing Formula
+Each country chart provides the top 100 songs in that country. An artist earns points for each song they place in the chart according to its position:
+$$\text{points}(\text{rank}) = 101 - \text{rank}$$
+An artist's in-country **chartScore** is the sum of points across all their charting songs:
+$$\text{chartScore} = \sum_{s \in \text{songs}} (101 - \text{rank}_s)$$
+To calculate physical 3D blob radius on the globe, an artist's relative dominance within their country is balanced with their country's relative weight in the global music market:
+$$r = \frac{\text{chartScore}}{\text{countryTopScore}}, \quad w = \left(\frac{\text{countryTopScore}}{\text{globalMaxTopScore}}\right)^{0.4}$$
+$$t = \sqrt{r} \times (0.5 + 0.5 \times w)$$
+$$\text{radius} = (R_{\min} + (R_{\max} - R_{\min}) \times t) \times \text{BLOB\_SIZE\_BOOST}$$
+This ensures the #1 artist in any country is prominently sized, while retaining global proportional context.
+
+### 2. Countries Without Charts (`noChart`)
+Out of 136 recognized countries in the base map, 20 countries currently do not have an active Apple Music public RSS chart feed (e.g., Cuba, North Korea, Iran, Somalia). In BobGlobe, these countries fail gracefully: they remain beautifully rendered on the 3D globe with country boundary outlines and search support, but without artist blobs or broken audio links.
+
+### 3. Explicit Song Protection
+Explicit songs flagged in Apple's feed (`contentAdvisoryRating: "Explicit"`) are strictly prevented from autoplaying on hover. When an explicit song is detected, the audio engine automatically falls back to the artist's next available clean track; if no clean preview exists, preview playback is safely suppressed and an advisory pill is displayed.
+
+### 4. An Honest Note on Data Scope
+BobGlobe visualizes **Apple Music's country charts**. While Apple Music provides wide international coverage across 116 markets, it does not represent total streaming across all platforms (e.g. Spotify, YouTube, physical sales, local radio). It offers a fascinating, unified snapshot of commercial streaming popularity by country.
+
+---
+
+## 💻 Tech Stack
+
+- **Framework**: React 18 + TypeScript + Vite
+- **3D Graphics**: Three.js, `@react-three/fiber`, `@react-three/drei`
+- **Animation & Math**: `maath`, `@react-spring/three`
+- **Styling**: Tailwind CSS
+- **Icons**: `lucide-react`
+- **Data & Geography**: Natural Earth 1:50m raster land masks and country borders
+- **CI / CD**: GitHub Actions (Nightly Data Refresh + GitHub Pages Deployment)
+
+---
+
+## 🚀 Run Locally
+
+### Prerequisites
+- Node.js 20+
+- npm 10+
+
+### Setup
 ```bash
-# 1. Install dependencies
-npm install
+# Clone the repository
+git clone https://github.com/abdulrehman11tariq/BobGlobe.git
+cd BobGlobe
 
-# 2. Start local development server
+# Install dependencies
+npm ci
+
+# Run development server (opens at http://localhost:3000)
 npm run dev
+```
 
-# 3. Build production bundle
+### Pipeline & Test Commands
+```bash
+# Run all unit tests (scatter footprint, landmark audit, elevation audit, data aggregation)
+npm test
+
+# Verify production data health (country coverage, artist scores, preview & photo completeness)
+npm run verify-data
+
+# Dry-run data fetch (tests Apple Music & Deezer endpoints without modifying files)
+npm run fetch-data:dry
+
+# Full data fetch (refreshes public/data/latest.json and writes daily snapshot)
+npm run fetch-data
+
+# Production build and typecheck
 npm run build
 ```
 
 ---
 
-## 🎧 How the Data Works
+## 🔄 Nightly Refresh Workflow
 
-BobGlobe uses real, daily-updated charts from Apple Music combined with Deezer artist imagery:
+A GitHub Actions workflow (`.github/workflows/refresh.yml`) runs automatically every night at 02:00 UTC:
+1. Scrapes the latest top 100 song charts across 136 countries from Apple Music RSS.
+2. Resolves clean artist names and 30-second AAC audio previews via the iTunes API.
+3. Retrieves high-resolution artist images from Deezer.
+4. Computes chart scores, ranks, and day-over-day trends (`up`, `down`, `same`, `new`).
+5. Prunes snapshot files in `public/data/history/` older than 30 days.
+6. Commits changes to `main` only if the data has updated.
+7. Triggers the automated GitHub Pages deployment workflow (`.github/workflows/deploy.yml`) via `workflow_run`.
 
-### 1. Daily Pipeline Workflow
-```bash
-# Fetch latest Apple Music charts, iTunes previews, and Deezer HD photos:
-node scripts/fetchData.mjs
+---
 
-# Verify coverage, data invariants, and reachability:
-node scripts/verifyData.mjs
+## 📸 Screenshots
 
-# Run full placement and unit verification suite:
-npm test
-```
+| 3D Interactive Globe | Hover Preview Card |
+| :---: | :---: |
+| ![BobGlobe 3D View](docs/screenshots/globe.png) | ![Hover Preview Card](docs/screenshots/hover-card.png) |
 
-### 2. Data Sources & Architecture
-- **Apple Music Country Charts**: Public RSS feeds (`https://rss.marketingtools.apple.com/api/v2/{cc}/music/most-played/100/songs.json`) querying the Top 100 most-played songs across 136 countries.
-- **iTunes Search / Lookup**: Fetches clean artist IDs, high-resolution album cover artwork, and 30-second audio previews.
-- **Deezer API**: Resolves high-resolution ($1000\times1000$) artist photography and Deezer profile links.
-- **Scoring & Sizing**:
-  $$\text{score} = \sum_{i} (101 - \text{rank}_i) \times (1.10 \text{ if rank}_i = 1 \text{ else } 1.0)$$
-  Blob radius dynamically balances local country dominance with global market volume:
-  $$r = \frac{\text{chartScore}}{\text{countryTopScore}}, \quad w = \left(\frac{\text{countryTopScore}}{\text{globalMaxTopScore}}\right)^{0.4}$$
-  $$t = \sqrt{r} \times (0.5 + 0.5 \times w)$$
-- **Explicit Content Safety**: Explicit songs (`explicit: true`) never autoplay. If an artist has no clean preview, BobGlobe stays silent and indicates *"No clean preview. Open on Apple Music"*.
-- **Nightly Automated Refresh**: Configured in `.github/workflows/refresh.yml`, running automatically every night at 03:00 UTC with snapshot diffing and 30-day history retention.
+| Artist Detail Panel | Global Search Explorer |
+| :---: | :---: |
+| ![Artist Panel](docs/screenshots/artist-panel.png) | ![Search Explorer](docs/screenshots/search.png) |
 
+---
 
-Open [http://localhost:3000](http://localhost:3000) for the main globe or [http://localhost:3000/debug/blob](http://localhost:3000/debug/blob) for the QA Blob Studio.
+## 🔮 Known Limitations & Future Plans
+
+- **Trend Indicators**: Rank movement trend arrows (`↑`, `↓`, `★`) require at least 2 consecutive days of snapshot history to populate; they will begin indicating weekly trends after the nightly action has run continuously.
+- **Mobile WebGL Optimization**: While capped to DPR 1.5 on touch devices, low-end mobile GPUs may experience frame drops with 190+ animated blobs active; an optional LOD culling mode is planned.
+- **Side-by-Side Compare Mode**: Comparing two nations' music taste side-by-side on split globes is planned for future releases.
+- **Walk Mode**: First-person planetary exploration is planned for future major releases.
+
+---
+
+## 👏 Credits & Attributions
+
+- **Music Charts & Metadata**: Apple Music Public RSS Directory & iTunes Search API
+- **Artist Imagery**: Deezer Developer Platform
+- **Geography & Land Boundaries**: [Natural Earth](https://www.naturalearthdata.com/)
+- **Typography**: [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) by Tokotype
+- **Icons**: [Lucide React](https://lucide.dev/)
+
+---
+
+## 📄 License
+
+MIT License. Free for educational and personal use.

@@ -1,5 +1,10 @@
 {
   "artists": {
+    "32940": {
+      "name": "Michael Jackson",
+      "url": "https://music.apple.com/us/artist/michael-jackson/32940?uo=4",
+      "cachedAt": 1793442389609
+    },
     "148662": {
       "name": "LINKIN PARK",
       "url": "https://music.apple.com/us/artist/linkin-park/148662?uo=4",
@@ -419,6 +424,11 @@
       "name": "איתי לוי",
       "url": "https://music.apple.com/us/artist/itay-levy/679531587?uo=4",
       "cachedAt": 1793368924883
+    },
+    "723844870": {
+      "name": "Marília Mendonça",
+      "url": "https://music.apple.com/us/artist/mar%C3%ADlia-mendon%C3%A7a/723844870?uo=4",
+      "cachedAt": 1793442389609
     },
     "785052275": {
       "name": "Jung Kook",
@@ -869,6 +879,11 @@
       "name": "Sara Rikas",
       "url": "https://music.apple.com/us/artist/sara-rikas/1476893287?uo=4",
       "cachedAt": 1793368924883
+    },
+    "1477069351": {
+      "name": "MC Jvila",
+      "url": "https://music.apple.com/us/artist/mc-jvila/1477069351?uo=4",
+      "cachedAt": 1793442389609
     },
     "1477489480": {
       "name": "מור",

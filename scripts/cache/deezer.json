@@ -1642,5 +1642,23 @@
     "deezerUrl": "https://www.deezer.com/artist/159480602",
     "photoMissing": false,
     "cachedAt": 1793369179372
+  },
+  "mariliamendonca": {
+    "imageUrl": "https://cdn-images.dzcdn.net/images/artist/1ee9d64e22df6a19b21698995ae90fdf/1000x1000-000000-80-0-0.jpg",
+    "deezerUrl": "https://www.deezer.com/artist/7068771",
+    "photoMissing": false,
+    "cachedAt": 1793442405188
+  },
+  "mcjvila": {
+    "imageUrl": "https://cdn-images.dzcdn.net/images/artist/db2bcc33d1a3c57f1bb97a730e41cd9d/1000x1000-000000-80-0-0.jpg",
+    "deezerUrl": "https://www.deezer.com/artist/68444392",
+    "photoMissing": false,
+    "cachedAt": 1793442405188
+  },
+  "michaeljackson": {
+    "imageUrl": "https://cdn-images.dzcdn.net/images/artist/97fae13b2b30e4aec2e8c9e0c7839d92/1000x1000-000000-80-0-0.jpg",
+    "deezerUrl": "https://www.deezer.com/artist/259",
+    "photoMissing": false,
+    "cachedAt": 1793442405188
   }
 }

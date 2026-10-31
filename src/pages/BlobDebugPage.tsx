@@ -28,6 +28,7 @@ const sharedFaceShellGeom = createFaceShellGeometry();
 const sharedShadowGeom = new THREE.CircleGeometry(0.85, 20);
 const sharedBellyGeom = new THREE.CircleGeometry(0.55, 20);
 const sharedHighlightGeom = new THREE.CircleGeometry(0.24, 16);
+const _scratchDebugWorldPos = new THREE.Vector3();
 
 const QABlobItem: FC<QABlobItemProps> = ({
   sizeScale,
@@ -142,8 +143,8 @@ const QABlobItem: FC<QABlobItemProps> = ({
 
     // Distance LOD Scaling for far camera distance test
     if (faceMeshRef.current) {
-      const worldPos = new THREE.Vector3(...position);
-      const camDist = camera.position.distanceTo(worldPos);
+      _scratchDebugWorldPos.set(position[0], position[1], position[2]);
+      const camDist = camera.position.distanceTo(_scratchDebugWorldPos);
       let lodScale = 1.0;
       if (camDist > MOCHI_CONFIG.LOD_FAR_DISTANCE) {
         lodScale = Math.min(

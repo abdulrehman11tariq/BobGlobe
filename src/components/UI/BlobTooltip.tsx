@@ -43,8 +43,8 @@ export const BlobTooltip: FC<BlobTooltipProps> = ({ blob, trendAvailable = false
   const progressPercent = Math.min(100, Math.max(0, (currentTime / (duration || 30)) * 100));
 
   return (
-    <div className="fixed top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none transition-all duration-200">
-      <div className="glass-panel p-4 rounded-3xl shadow-2xl border border-white/25 flex flex-col gap-3 min-w-[320px] max-w-[380px] text-white animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md bg-slate-950/80">
+    <div className="fixed top-[110px] sm:top-20 left-1/2 -translate-x-1/2 z-40 pointer-events-none transition-all duration-200 w-[calc(100vw-24px)] max-w-[380px]">
+      <div className="glass-panel p-3.5 sm:p-4 rounded-3xl shadow-2xl border border-white/25 flex flex-col gap-2.5 sm:gap-3 w-full text-white animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md bg-slate-950/85">
         {/* Top Row: Avatar, Name, Country Flag & Rank */}
         <div className="flex items-center gap-3">
           {/* Round artist photo with colored ring */}
