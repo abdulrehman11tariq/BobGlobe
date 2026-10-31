@@ -12,7 +12,6 @@ import { AudioControlsBar } from './components/UI/AudioControlsBar';
 import { SearchBar } from './components/UI/SearchBar';
 import { GlobalTopPanel } from './components/UI/GlobalTopPanel';
 import { BlobDebugPage } from './pages/BlobDebugPage';
-import { ThumbnailGeneratorPage } from './pages/ThumbnailGeneratorPage';
 import { useGlobeData } from './hooks/useGlobeData';
 import { usePreviewPlayer } from './hooks/usePreviewPlayer';
 import { computeGlobalBlobLayout } from './utils/blobPlacement';
@@ -74,20 +73,12 @@ export function App() {
     }
   }, [hoveredBlob, selectedBlob, isInteracting]);
 
-  // Check if initial route is /debug/blob or /thumbnail (DEV only)
+  // Check if initial route is /debug/blob (DEV only)
   const [isDebugBlobStudio, setIsDebugBlobStudio] = useState<boolean>(() => {
     if (!import.meta.env.DEV) return false;
     return (
       window.location.pathname.includes('/debug/blob') ||
       window.location.search.includes('preview=blob')
-    );
-  });
-
-  const [isThumbnailStudio, setIsThumbnailStudio] = useState<boolean>(() => {
-    if (!import.meta.env.DEV) return false;
-    return (
-      window.location.pathname.includes('/thumbnail') ||
-      window.location.search.includes('preview=thumbnail')
     );
   });
 
@@ -249,17 +240,6 @@ export function App() {
     [player]
   );
 
-  if (import.meta.env.DEV && isThumbnailStudio) {
-    return (
-      <ThumbnailGeneratorPage
-        onReturnToGlobe={() => {
-          setIsThumbnailStudio(false);
-          window.history.pushState({}, '', '/');
-        }}
-      />
-    );
-  }
-
   if (import.meta.env.DEV && isDebugBlobStudio) {
     return (
       <BlobDebugPage
@@ -403,6 +383,16 @@ export function App() {
         showMarkers={showMarkers}
         onToggleMarkers={() => setShowMarkers((prev) => !prev)}
       />
+
+      {/* Tiny Footer Link to About & Disclaimer */}
+      <footer className="fixed bottom-2 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+        <button
+          onClick={() => setIsAboutOpen(true)}
+          className="text-[10px] text-slate-400 hover:text-slate-200 transition-colors font-medium px-2.5 py-0.5 rounded-full bg-slate-950/40 backdrop-blur-sm border border-white/5 shadow-sm"
+        >
+          About &bull; Data &bull; Disclaimer
+        </button>
+      </footer>
 
       {/* Friendly Full-Screen Error State with Retry Button (no silent empty globe) */}
       {error && !data && (

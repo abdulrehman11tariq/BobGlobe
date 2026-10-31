@@ -381,6 +381,11 @@ export const ArtistPanel: FC<ArtistPanelProps> = ({
           )}
         </div>
 
+        {/* Platform Attribution */}
+        <div className="text-[10px] text-center text-slate-400 font-medium">
+          Photo: Deezer &bull; Previews courtesy of Apple Music
+        </div>
+
         {/* Footer tip */}
         <div className="text-[10px] text-center text-slate-400 font-medium">
           Use <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-white/10 text-slate-300 font-mono">←</kbd> <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-white/10 text-slate-300 font-mono">→</kbd> to switch artists &bull; <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-white/10 text-slate-300 font-mono">Esc</kbd> to close

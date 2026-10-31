@@ -74,6 +74,18 @@ export const AboutModal: FC<AboutModalProps> = ({ isOpen, onClose, updatedAt }) 
           </div>
         </div>
 
+        {/* Legal Disclaimer */}
+        <div className="text-[10px] leading-relaxed text-slate-400 bg-slate-950/40 p-3 rounded-xl border border-white/5">
+          <span className="font-bold text-slate-300">Disclaimer: </span>
+          Not affiliated with or endorsed by Apple, Deezer or the artists. Hackathon project, non-commercial. Artist names, photos and audio previews belong to their owners.
+        </div>
+
+        {/* Open Source Credits */}
+        <div className="text-[10px] text-slate-400 text-center space-y-0.5">
+          <div>Geography: Natural Earth (Public Domain) &bull; Font: Plus Jakarta Sans (OFL)</div>
+          <div>Built with Three.js, React Three Fiber & Lucide (MIT / ISC)</div>
+        </div>
+
         {/* Footer */}
         <button
           onClick={onClose}

@@ -60,12 +60,17 @@ function fallbackCleanName(rawArtistName) {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const USER_AGENT = 'BobGlobe-hackathon/1.0 (https://github.com/abdulrehman11tariq/BobGlobe)';
 
 async function fetchWithRetry(url, options = {}, retries = 2, backoffMs = 1500) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const res = await fetch(url, {
         ...options,
+        headers: {
+          'User-Agent': USER_AGENT,
+          ...(options.headers || {}),
+        },
         signal: AbortSignal.timeout(5000),
       });
       // 404 and 403 on Apple RSS mean "not available / no chart" -> return immediately, no backoff

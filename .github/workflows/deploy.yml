@@ -42,6 +42,9 @@ jobs:
       - name: Build Application
         run: npm run build
 
+      - name: Trim Non-Runtime Data Snapshots from Dist
+        run: rm -rf dist/data/history
+
       - name: Copy index.html to 404.html for GitHub Pages SPA Routing
         run: cp dist/index.html dist/404.html
 

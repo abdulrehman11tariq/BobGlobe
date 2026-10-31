@@ -3,8 +3,8 @@
  */
 export const BLOB_CONFIG = {
   // Global Sizing Boost (Change this to scale all blobs up or down uniformly)
-  BLOB_SIZE_BOOST: 2.0,       // 2x larger blobs (tunable single source of truth)
-  GLOBAL_SIZE_SCALE: 2.0,     // Alias for BLOB_SIZE_BOOST
+  BLOB_SIZE_BOOST: 1.5,       // Tuned from 2.0 to 1.5 for optimal international coverage
+  GLOBAL_SIZE_SCALE: 1.5,     // Alias for BLOB_SIZE_BOOST
 
   // Sizing parameters (base values prior to BLOB_SIZE_BOOST)
   MIN_RADIUS: 0.038,       // Minimum blob radius (~1.5% of planet radius)
@@ -17,8 +17,9 @@ export const BLOB_CONFIG = {
   ISLAND_SNAP_RADIUS: 4.5,    // Degree radius to search for solid land for island countries
 
   // Phase 3.5 Scatter Constants
-  GAP: 0.010,                 // Minimum world clearance gap between blob boundaries (dist > rA + rB + GAP)
-  SHRINK_FLOOR: 0.28,         // Maximum shrink limit for narrow/island nations (preserves visibility & kawaii details)
+  GAP: 0.005,                 // Reduced clearance gap for tighter deterministic packing
+  SHRINK_FLOOR: 0.20,         // Extended shrink limit for narrow/island nations
+  HARD_MIN_RADIUS: 0.008,     // Sensible minimum on-screen size for guaranteed #1 placement
   JITTER_MAX_FACTOR: 0.15,    // Subtle organic jitter (up to 15% of blob radius, only if footprint passes)
 
   // Spring animation

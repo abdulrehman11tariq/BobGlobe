@@ -199,7 +199,7 @@ export function computeGlobalBlobLayout(
     const candidatePool = [rank1Pt, ...otherPts];
 
     // 2. Try shared shrink factors
-    const shrinkFactors = [1.0, 0.90, 0.80, 0.70, 0.60, 0.50, 0.42, 0.35, BLOB_CONFIG.SHRINK_FLOOR];
+    const shrinkFactors = [1.0, 0.90, 0.80, 0.70, 0.60, 0.50, 0.42, 0.35, 0.28, 0.24, BLOB_CONFIG.SHRINK_FLOOR];
     let bestPlacedThisCountry: {
       artist: Artist;
       rank: number;
@@ -248,10 +248,10 @@ export function computeGlobalBlobLayout(
 
           // If fails, try monotonic shrink down to shrink floor for this point
           if (!passes && factor === shrinkFactors[shrinkFactors.length - 1]) {
-            const minAllowed = baseRadii[rankIdx] * BLOB_CONFIG.SHRINK_FLOOR;
+            const minAllowed = Math.max(BLOB_CONFIG.HARD_MIN_RADIUS, baseRadii[rankIdx] * BLOB_CONFIG.SHRINK_FLOOR);
             const stepDown = [testR * 0.85, testR * 0.70, minAllowed];
             for (const subR of stepDown) {
-              if (subR >= minAllowed && validateBlobFootprint(cand.lat, cand.lng, subR, countryId)) {
+              if (subR >= BLOB_CONFIG.HARD_MIN_RADIUS && validateBlobFootprint(cand.lat, cand.lng, subR, countryId)) {
                 testR = subR;
                 passes = true;
                 break;
@@ -337,10 +337,10 @@ export function computeGlobalBlobLayout(
       // Selection heuristic: Maximize placed blobs count; prioritize placing Rank 1
       const attemptScore =
         placedInAttempt.length * 10 +
-        (placedInAttempt.some((b) => b.rank === 1) ? 5 : 0);
+        (placedInAttempt.some((b) => b.rank === 1) ? 20 : 0);
       const bestScore =
         bestPlacedThisCountry.length * 10 +
-        (bestPlacedThisCountry.some((b) => b.rank === 1) ? 5 : 0);
+        (bestPlacedThisCountry.some((b) => b.rank === 1) ? 20 : 0);
 
       if (attemptScore > bestScore) {
         bestPlacedThisCountry = placedInAttempt;
@@ -349,6 +349,47 @@ export function computeGlobalBlobLayout(
 
       if (placedInAttempt.length === artists.length) {
         break; // Placed all 5 artists
+      }
+    }
+
+    // GUARANTEE: every country that has a chart places at least its #1 artist
+    if (!bestPlacedThisCountry.some((b) => b.rank === 1) && artists.length > 0) {
+      const sortedByClearance = [...rawPoints].sort((a, b) => b.clearanceDeg - a.clearanceDeg);
+      let placedRank1 = false;
+
+      for (const cand of sortedByClearance) {
+        if (placedRank1) break;
+        for (let subR = baseRadii[0] * BLOB_CONFIG.SHRINK_FLOOR; subR >= BLOB_CONFIG.HARD_MIN_RADIUS; subR -= 0.002) {
+          if (!validateBlobFootprint(cand.lat, cand.lng, subR, countryId)) continue;
+
+          // Check overlap with globally placed blobs
+          let overlapsGlobal = false;
+          for (const gb of allPlaced) {
+            const dist = greatCircleDist(cand.lat, cand.lng, gb.lat, gb.lng);
+            if (dist <= subR + gb.radius + BLOB_CONFIG.GAP) {
+              overlapsGlobal = true;
+              break;
+            }
+          }
+          if (overlapsGlobal) continue;
+
+          // Remove any colliding blob in bestPlacedThisCountry to guarantee Rank 1
+          bestPlacedThisCountry = bestPlacedThisCountry.filter(
+            (b) => greatCircleDist(cand.lat, cand.lng, b.lat, b.lng) > subR + b.radius + BLOB_CONFIG.GAP
+          );
+
+          bestPlacedThisCountry.unshift({
+            artist: artists[0],
+            rank: 1,
+            lat: cand.lat,
+            lng: cand.lng,
+            radius: subR,
+            candPt: cand,
+          });
+          placedRank1 = true;
+          totalReassigned++;
+          break;
+        }
       }
     }
 

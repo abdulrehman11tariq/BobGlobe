@@ -148,6 +148,11 @@ export const BlobTooltip: FC<BlobTooltipProps> = ({ blob, trendAvailable = false
               <span>Hovering for preview...</span>
             </div>
           )}
+          {/* Platform Attribution */}
+          <div className="text-[9px] text-slate-400 font-medium flex items-center justify-between border-t border-white/5 pt-1.5">
+            <span>Photo: Deezer</span>
+            <span>Preview: Apple Music</span>
+          </div>
         </div>
       </div>
     </div>

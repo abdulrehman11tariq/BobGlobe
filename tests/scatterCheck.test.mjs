@@ -121,11 +121,12 @@ const countryIdMap = new Map(countries.map((c) => [c.code, c.id]));
 const countryMetaMap = new Map(countries.map((c) => [c.code, c]));
 
 // Layout constants
-const BLOB_SIZE_BOOST = 2.0;
+const BLOB_SIZE_BOOST = 1.5;
 const MIN_RADIUS = 0.038 * BLOB_SIZE_BOOST;
 const MAX_RADIUS = 0.105 * BLOB_SIZE_BOOST;
-const GAP = 0.010;
-const SHRINK_FLOOR = 0.28;
+const GAP = 0.005;
+const SHRINK_FLOOR = 0.20;
+const HARD_MIN_RADIUS = 0.008;
 const JITTER_MAX_FACTOR = 0.15;
 
 function mulberry32(seed) {
@@ -159,7 +160,7 @@ function calcRadius(listeners) {
 
 function runLayout() {
   const allPlaced = [];
-  const shrinkFactors = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.42, 0.35, SHRINK_FLOOR];
+  const shrinkFactors = [1.0, 0.90, 0.80, 0.70, 0.60, 0.50, 0.42, 0.35, 0.28, 0.24, SHRINK_FLOOR];
 
   for (const country of latestData.countries) {
     const cId = countryIdMap.get(country.code) ?? 0;
@@ -216,10 +217,10 @@ function runLayout() {
           let passes = validateBlobFootprint(cand.lat, cand.lng, testR, cId);
 
           if (!passes && factor === shrinkFactors[shrinkFactors.length - 1]) {
-            const minAllowed = baseRadii[rankIdx] * SHRINK_FLOOR;
+            const minAllowed = Math.max(HARD_MIN_RADIUS, baseRadii[rankIdx] * SHRINK_FLOOR);
             const stepDown = [testR * 0.85, testR * 0.70, minAllowed];
             for (const subR of stepDown) {
-              if (subR >= minAllowed && validateBlobFootprint(cand.lat, cand.lng, subR, cId)) {
+              if (subR >= HARD_MIN_RADIUS && validateBlobFootprint(cand.lat, cand.lng, subR, cId)) {
                 testR = subR;
                 passes = true;
                 break;
@@ -299,16 +300,53 @@ function runLayout() {
 
       const attemptScore =
         placedInAttempt.length * 10 +
-        (placedInAttempt.some((b) => b.rank === 1) ? 5 : 0);
+        (placedInAttempt.some((b) => b.rank === 1) ? 20 : 0);
       const bestScore =
         bestPlacedThisCountry.length * 10 +
-        (bestPlacedThisCountry.some((b) => b.rank === 1) ? 5 : 0);
+        (bestPlacedThisCountry.some((b) => b.rank === 1) ? 20 : 0);
 
       if (attemptScore > bestScore) {
         bestPlacedThisCountry = placedInAttempt;
       }
       if (placedInAttempt.length === artists.length) {
         break;
+      }
+    }
+
+    // GUARANTEE: every country that has a chart places at least its #1 artist
+    if (!bestPlacedThisCountry.some((b) => b.rank === 1) && artists.length > 0) {
+      const sortedByClearance = [...rawPts].sort((a, b) => b.clearanceDeg - a.clearanceDeg);
+      let placedRank1 = false;
+
+      for (const cand of sortedByClearance) {
+        if (placedRank1) break;
+        for (let subR = baseRadii[0] * SHRINK_FLOOR; subR >= HARD_MIN_RADIUS; subR -= 0.002) {
+          if (!validateBlobFootprint(cand.lat, cand.lng, subR, cId)) continue;
+
+          let overlapsGlobal = false;
+          for (const gb of allPlaced) {
+            if (greatCircleDist(cand.lat, cand.lng, gb.lat, gb.lng) <= subR + gb.radius + GAP) {
+              overlapsGlobal = true;
+              break;
+            }
+          }
+          if (overlapsGlobal) continue;
+
+          bestPlacedThisCountry = bestPlacedThisCountry.filter(
+            (b) => greatCircleDist(cand.lat, cand.lng, b.lat, b.lng) > subR + b.radius + GAP
+          );
+
+          bestPlacedThisCountry.unshift({
+            countryCode: country.code,
+            rank: 1,
+            artist: artists[0],
+            lat: cand.lat,
+            lng: cand.lng,
+            radius: subR,
+          });
+          placedRank1 = true;
+          break;
+        }
       }
     }
 
